@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: dressify-backend
+    env: node
+    region: oregon
+    plan: free
+    
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    
+    envVars:
+      - key: MONGODB_URI
+        scope: build,runtime
+        value: mongodb+srv://dressify_user:${MONGODB_PASSWORD}@cluster0.xxxxx.mongodb.net/dressify?retryWrites=true&w=majority
+        
+      - key: JWT_SECRET
+        scope: build,runtime
+        value: ${JWT_SECRET}
+        
+      - key: NODE_ENV
+        scope: build,runtime
+        value: production
+        
+      - key: PORT
+        scope: build,runtime
+        value: 10000
+        
+      - key: GOOGLE_CLIENT_ID
+        scope: build,runtime
+        value: ${GOOGLE_CLIENT_ID}
+        
+      - key: FRONTEND_URL
+        scope: build,runtime
+        value: https://dressify.vercel.app
+      
+    autoDeploy: true
+    
+    disk:
+      name: dressify-data
+      mountPath: /data
+      sizeGB: 1

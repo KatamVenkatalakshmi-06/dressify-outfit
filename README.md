@@ -1,70 +1,134 @@
-# Welcome to your Lovable project
+# ✦ Dressify - Outfit Customization Platform
 
-## Project info
+A full-stack web application for designing and customizing outfits with backend user authentication, data persistence, and Google OAuth integration.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🎯 Features
 
-## How can I edit this code?
+### Frontend
+- 👗 Interactive outfit designer with customizable components
+- 🎨 Color and pattern customization
+- 💾 Save and manage multiple designs
+- 📱 Responsive design
 
-There are several ways of editing your application.
+### Backend
+# ✦ Dressify - Outfit Customization Platform
 
-**Use Lovable**
+A full-stack web application for designing and customizing outfits with backend user authentication, data persistence, and Google OAuth integration.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🎯 Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### Frontend
+- 👗 Interactive outfit designer with customizable components
+- 🎨 Color and pattern customization
+- 💾 Save and manage multiple designs
+- 📱 Responsive design
 
-**Use your preferred IDE**
+### Backend
+- ✅ User authentication (Email/Password + Google OAuth)
+- 🔐 JWT token-based sessions
+- 💿 MongoDB data persistence
+- 👤 User profile management
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Quick Start
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 1. Install Dependencies
+```bash
+npm install
+cd backend && npm install && cd ..
+```
 
-Follow these steps:
+### 2. Setup MongoDB & Google OAuth
+See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed instructions
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Configure Environment
+Edit `backend/.env`:
+```env
+MONGODB_URI=mongodb://localhost:27017/dressify
+JWT_SECRET=your_secret
+GOOGLE_CLIENT_ID=your_client_id
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 4. Start Backend (Terminal 1)
+```bash
+cd backend
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### 5. Start Frontend (Terminal 2)
+```bash
+npm run dev
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 6. Open Browser
+Navigate to: **http://localhost:8080**
 
-**Use GitHub Codespaces**
+## 📁 Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+dressify-outfit/
+├── src/                     # React Frontend
+│   ├── pages/Auth.tsx      # Login/Signup with OAuth
+│   ├── services/api.ts     # Backend API integration
+│   ├── contexts/           # State management
+│   └── ...
+├── backend/                # Node.js/Express API
+│   ├── routes/auth.js      # Authentication endpoints
+│   ├── routes/users.js     # User management endpoints
+│   ├── config/db.js        # MongoDB connection
+│   ├── server.js           # Express server
+│   └── .env                # Configuration
+├── SETUP_GUIDE.md          # Detailed setup guide
+├── setup.bat               # Windows auto-setup
+└── README.md               # This file
+```
 
-## What technologies are used for this project?
+## 🔌 API Endpoints
 
-This project is built with:
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/signup` | Register user |
+| POST | `/api/auth/login` | Login with email/password |
+| POST | `/api/auth/google` | Google OAuth login |
+| GET | `/api/users/profile` | Get user profile (Auth) |
+| POST | `/api/users/save-design` | Save design (Auth) |
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🛠️ Tech Stack
 
-## How can I deploy this project?
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Backend:** Node.js, Express, MongoDB, JWT
+- **Auth:** Email/Password + Google OAuth 2.0
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 📚 Documentation
 
-## Can I connect a custom domain to my Lovable project?
+- [Full Setup Guide](./SETUP_GUIDE.md) - Step-by-step instructions
+- [Backend Documentation](./backend/README.md) - API details
+- [Troubleshooting Guide](./SETUP_GUIDE.md#troubleshooting) - Common issues
+
+## ⚙️ Requirements
+
+- Node.js 16+
+- MongoDB (local or Atlas cloud)
+- Google Cloud Console account (for OAuth)
+
+## 🚦 Status
+
+✅ Frontend: Ready
+✅ Backend: Ready  
+✅ Database: Configurable
+✅ Authentication: Email + Google OAuth
+✅ User Data Persistence: MongoDB
+
+## 📖 Getting Started
+
+1. Run `setup.bat` (Windows) or follow [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+2. Configure MongoDB connection
+3. Setup Google OAuth credentials
+4. Start backend and frontend
+5. Visit http://localhost:8080
+
+---
+
+Made with ❤️ for outfit customization
 
 Yes, you can!
 
