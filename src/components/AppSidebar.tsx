@@ -80,7 +80,7 @@ export default function AppSidebar() {
         </div>
         {navBtn("/feedback", "Feedback", MessageSquare)}
         <button
-          onClick={() => { logout(); navigate("/"); }}
+          onClick={async () => { await logout(); navigate("/"); }}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-sidebar-foreground/60 hover:text-destructive transition-colors"
         >
           <LogOut size={18} />
