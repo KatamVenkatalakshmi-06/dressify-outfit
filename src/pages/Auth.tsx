@@ -1,21 +1,80 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { isLoggedIn } = useApp();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login(name || email.split("@")[0]);
+  // Redirect if already logged in
+  if (isLoggedIn) {
     navigate("/home");
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name: name || email.split("@")[0] },
+          },
+        });
+        if (error) throw error;
+        toast({ title: "Account created!", description: "You are now signed in." });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+        toast({ title: "Welcome back!" });
+      }
+      navigate("/home");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/home",
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Google sign-in failed",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,6 +122,7 @@ export default function Auth() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
                   required={isSignUp}
+                  disabled={isLoading}
                 />
               </div>
             )}
@@ -74,6 +134,7 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                disabled={isLoading}
               />
             </div>
             <div>
@@ -84,10 +145,16 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={6}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full h-12 text-base font-semibold burgundy-gradient border-none text-primary-foreground hover:opacity-90">
-              {isSignUp ? "Sign Up" : "Sign In"}
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold burgundy-gradient border-none text-primary-foreground hover:opacity-90"
+              disabled={isLoading}
+            >
+              {isLoading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}
             </Button>
           </form>
 
@@ -100,11 +167,8 @@ export default function Auth() {
           <Button
             variant="outline"
             className="w-full h-12 text-base font-medium"
-            onClick={(e) => {
-              e.preventDefault();
-              login("Google User");
-              navigate("/home");
-            }}
+            disabled={isLoading}
+            onClick={handleGoogleSignIn}
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -120,6 +184,7 @@ export default function Auth() {
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-primary font-semibold hover:underline"
+              disabled={isLoading}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </button>
