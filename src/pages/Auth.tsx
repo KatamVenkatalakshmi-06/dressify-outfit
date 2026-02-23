@@ -36,7 +36,13 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        toast({ title: "Account created!", description: "You are now signed in." });
+        // Sign out immediately so user must log in with their credentials
+        await supabase.auth.signOut();
+        setIsSignUp(false);
+        setName("");
+        setPassword("");
+        toast({ title: "Account created!", description: "Please sign in with your credentials." });
+        return;
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
