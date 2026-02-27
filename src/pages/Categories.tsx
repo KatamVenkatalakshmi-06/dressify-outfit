@@ -10,23 +10,28 @@ export default function Categories() {
 
   return (
     <MainLayout>
-      <div className="p-8 lg:p-12">
+      <div className="p-6 lg:p-10">
         <h1 className="font-display text-4xl font-bold mb-2 animate-fade-in">{title}</h1>
-        <p className="text-muted-foreground mb-10">Choose a category to explore designs</p>
+        <p className="text-muted-foreground mb-8">Choose a category to explore designs</p>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-3 gap-4">
           {filtered.map((cat, i) => (
             <button
               key={cat.id}
               onClick={() => navigate(`/designs/${gender}/${cat.id}`)}
-              className="group bg-card rounded-2xl p-6 text-center shadow-sm border border-border hover:shadow-lg hover:border-primary/30 transition-all duration-300 animate-fade-in"
+              className="group relative overflow-hidden rounded-2xl aspect-[3/4] animate-fade-in"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
-              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                {cat.image}
+              <img
+                src={cat.image}
+                alt={cat.name}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+                <h3 className="font-display text-lg font-bold text-white mb-0.5">{cat.name}</h3>
+                <p className="text-sm text-white/70">{cat.designCount} designs</p>
               </div>
-              <h3 className="font-display text-lg font-semibold mb-1">{cat.name}</h3>
-              <p className="text-sm text-muted-foreground">{cat.designCount} designs</p>
             </button>
           ))}
         </div>
