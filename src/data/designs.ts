@@ -45,22 +45,22 @@ export interface FabricInfo {
 
 export const categories: Category[] = [
   // Women
-  { id: "blouses", name: "Blouses", gender: "women", image: "👚", designCount: 12 },
-  { id: "sarees", name: "Sarees", gender: "women", image: "🥻", designCount: 18 },
-  { id: "kurthi", name: "Kurthi", gender: "women", image: "👗", designCount: 15 },
-  { id: "lehenga", name: "Lehenga", gender: "women", image: "💃", designCount: 10 },
-  { id: "sharara", name: "Sharara", gender: "women", image: "👘", designCount: 8 },
-  { id: "western-tops", name: "Western Tops", gender: "women", image: "👕", designCount: 14 },
-  { id: "crop-tops", name: "Crop Tops", gender: "women", image: "🎽", designCount: 11 },
-  { id: "w-jeans", name: "Jeans", gender: "women", image: "👖", designCount: 9 },
-  { id: "w-pants", name: "Pants", gender: "women", image: "🩳", designCount: 7 },
+  { id: "blouses", name: "Blouses", gender: "women", image: "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "sarees", name: "Sarees", gender: "women", image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "kurthi", name: "Kurthi", gender: "women", image: "https://images.unsplash.com/photo-1594463750939-ebb28c3f7f75?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "lehenga", name: "Lehenga", gender: "women", image: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "sharara", name: "Sharara", gender: "women", image: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "western-tops", name: "Western Tops", gender: "women", image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "crop-tops", name: "Crop Tops", gender: "women", image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "w-jeans", name: "Jeans", gender: "women", image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "w-pants", name: "Pants", gender: "women", image: "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=600&h=800&fit=crop", designCount: 50 },
   // Men
-  { id: "m-pants", name: "Pants", gender: "men", image: "👖", designCount: 12 },
-  { id: "short-kurthi", name: "Short Kurthi", gender: "men", image: "🥼", designCount: 10 },
-  { id: "long-kurthi", name: "Long Kurthi", gender: "men", image: "🧥", designCount: 8 },
-  { id: "shirts", name: "Shirts", gender: "men", image: "👔", designCount: 16 },
-  { id: "m-jeans", name: "Jeans", gender: "men", image: "👖", designCount: 11 },
-  { id: "dhoti", name: "Dhoti", gender: "men", image: "🩲", designCount: 6 },
+  { id: "m-pants", name: "Pants", gender: "men", image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "short-kurthi", name: "Short Kurthi", gender: "men", image: "https://images.unsplash.com/photo-1608234807905-4466023792f5?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "long-kurthi", name: "Long Kurthi", gender: "men", image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "shirts", name: "Shirts", gender: "men", image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "m-jeans", name: "Jeans", gender: "men", image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&h=800&fit=crop", designCount: 50 },
+  { id: "dhoti", name: "Dhoti", gender: "men", image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&h=800&fit=crop", designCount: 50 },
 ];
 
 const colorSets = [
@@ -81,20 +81,151 @@ const colorSets = [
 const patterns = ["solid", "stripes", "dots", "checks", "floral", "paisley"];
 const fabrics = ["Silk", "Cotton", "Chiffon", "Georgette", "Linen", "Velvet", "Satin", "Crepe"];
 
+// Design image pools per category
+const designImages: Record<string, string[]> = {
+  blouses: [
+    "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1551854838-212c50b4c184?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400&h=500&fit=crop",
+  ],
+  sarees: [
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594463750939-ebb28c3f7f75?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop",
+  ],
+  kurthi: [
+    "https://images.unsplash.com/photo-1594463750939-ebb28c3f7f75?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop",
+  ],
+  lehenga: [
+    "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594463750939-ebb28c3f7f75?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop",
+  ],
+  sharara: [
+    "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594463750939-ebb28c3f7f75?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=500&fit=crop",
+  ],
+  "western-tops": [
+    "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1551854838-212c50b4c184?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400&h=500&fit=crop",
+  ],
+  "crop-tops": [
+    "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1551854838-212c50b4c184?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&h=500&fit=crop",
+  ],
+  "w-jeans": [
+    "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&h=500&fit=crop",
+  ],
+  "w-pants": [
+    "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&h=500&fit=crop",
+  ],
+  "m-pants": [
+    "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&h=500&fit=crop",
+  ],
+  "short-kurthi": [
+    "https://images.unsplash.com/photo-1608234807905-4466023792f5?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=400&h=500&fit=crop",
+  ],
+  "long-kurthi": [
+    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1608234807905-4466023792f5?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=400&h=500&fit=crop",
+  ],
+  shirts: [
+    "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1608234807905-4466023792f5?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=400&h=500&fit=crop",
+  ],
+  "m-jeans": [
+    "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1582552938357-32b906df40cb?w=400&h=500&fit=crop",
+  ],
+  dhoti: [
+    "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1608234807905-4466023792f5?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop",
+    "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=400&h=500&fit=crop",
+  ],
+};
+
+const designNames: Record<string, string[]> = {
+  blouses: ["Classic Silk", "Embroidered", "Brocade", "Zari Work", "Mirror Work", "Boat Neck", "Backless", "Puff Sleeve", "Halter", "Princess Cut"],
+  sarees: ["Banarasi", "Kanjeevaram", "Chiffon", "Georgette", "Tussar", "Patola", "Bandhani", "Chanderi", "Mysore Silk", "Paithani"],
+  kurthi: ["Anarkali", "A-Line", "Straight Cut", "Asymmetric", "Layered", "Angrakha", "Shirt Style", "Kaftan", "Floor Length", "Jacket Style"],
+  lehenga: ["Bridal", "A-Line", "Circular", "Mermaid", "Paneled", "Tiered", "Ruffled", "Cape", "Indo-Western", "Sharara Lehenga"],
+  sharara: ["Classic", "Gharara", "Palazzo", "Flared", "Pleated", "Embroidered", "Printed", "Layered", "Indo-Western", "Festive"],
+  "western-tops": ["Peplum", "Off-Shoulder", "Wrap", "Blazer", "Corset", "Tube", "Bodysuit", "Crop Blazer", "Ruched", "Asymmetric"],
+  "crop-tops": ["Bandeau", "Halter", "Tied", "Bralette", "Mesh", "Sequin", "Ribbed", "Cutout", "Ruffle", "Strappy"],
+  "w-jeans": ["Skinny", "Bootcut", "Wide Leg", "Mom Jeans", "Boyfriend", "Flared", "Straight", "Cropped", "High Rise", "Distressed"],
+  "w-pants": ["Palazzo", "Cigarette", "Culottes", "Jogger", "Cargo", "Pleated", "Paper Bag", "Wide Leg", "Tapered", "Harem"],
+  "m-pants": ["Chinos", "Formal", "Cargo", "Jogger", "Pleated", "Slim Fit", "Regular", "Tapered", "Cropped", "Linen"],
+  "short-kurthi": ["Pathani", "Angrakha", "Chinese Collar", "Nehru", "Printed", "Embroidered", "Plain", "Asymmetric", "Layered", "Jacket"],
+  "long-kurthi": ["Classic", "Achkan", "Sherwani Style", "A-Line", "Layered", "Embroidered", "Printed", "Festive", "Wedding", "Casual"],
+  shirts: ["Oxford", "Linen", "Denim", "Formal", "Casual", "Hawaiian", "Mandarin", "Slim Fit", "Regular", "Checkered"],
+  "m-jeans": ["Slim", "Straight", "Bootcut", "Relaxed", "Skinny", "Tapered", "Regular", "Distressed", "Dark Wash", "Light Wash"],
+  dhoti: ["Classic", "Festive", "Silk", "Cotton", "Printed", "Embroidered", "Wedding", "Casual", "Pleated", "Modern"],
+};
+
 export const designs: Design[] = [];
 
 categories.forEach((cat) => {
+  const catImages = designImages[cat.id] || [];
+  const catNames = designNames[cat.id] || [];
   for (let i = 0; i < cat.designCount; i++) {
     const colorSet = colorSets[i % colorSets.length];
+    const nameBase = catNames[i % catNames.length];
+    const nameNum = Math.floor(i / catNames.length) + 1;
     designs.push({
       id: `${cat.id}-${i + 1}`,
-      name: `${cat.name} Design ${i + 1}`,
+      name: nameNum > 1 ? `${nameBase} ${nameNum}` : nameBase,
       categoryId: cat.id,
       gender: cat.gender,
       colors: { ...colorSet },
       pattern: patterns[i % patterns.length],
       fabric: fabrics[i % fabrics.length],
-      image: cat.image,
+      image: catImages[i % catImages.length],
     });
   }
 });
