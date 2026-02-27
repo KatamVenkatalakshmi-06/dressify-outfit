@@ -1,18 +1,48 @@
 import blouseImg from "@/assets/categories/blouse.jpg";
+import blouseImg2 from "@/assets/categories/blouse-2.jpg";
+import blouseImg3 from "@/assets/categories/blouse-3.jpg";
 import sareeImg from "@/assets/categories/saree.jpg";
+import sareeImg2 from "@/assets/categories/saree-2.jpg";
+import sareeImg3 from "@/assets/categories/saree-3.jpg";
 import kurthiImg from "@/assets/categories/kurthi.jpg";
+import kurthiImg2 from "@/assets/categories/kurthi-2.jpg";
+import kurthiImg3 from "@/assets/categories/kurthi-3.jpg";
 import lehengaImg from "@/assets/categories/lehenga.jpg";
+import lehengaImg2 from "@/assets/categories/lehenga-2.jpg";
+import lehengaImg3 from "@/assets/categories/lehenga-3.jpg";
 import shararaImg from "@/assets/categories/sharara.jpg";
+import shararaImg2 from "@/assets/categories/sharara-2.jpg";
+import shararaImg3 from "@/assets/categories/sharara-3.jpg";
 import westernTopImg from "@/assets/categories/western-top.jpg";
+import westernTopImg2 from "@/assets/categories/western-top-2.jpg";
+import westernTopImg3 from "@/assets/categories/western-top-3.jpg";
 import cropTopImg from "@/assets/categories/crop-top.jpg";
+import cropTopImg2 from "@/assets/categories/crop-top-2.jpg";
+import cropTopImg3 from "@/assets/categories/crop-top-3.jpg";
 import wJeansImg from "@/assets/categories/w-jeans.jpg";
+import wJeansImg2 from "@/assets/categories/w-jeans-2.jpg";
+import wJeansImg3 from "@/assets/categories/w-jeans-3.jpg";
 import wPantsImg from "@/assets/categories/w-pants.jpg";
+import wPantsImg2 from "@/assets/categories/w-pants-2.jpg";
+import wPantsImg3 from "@/assets/categories/w-pants-3.jpg";
 import mPantsImg from "@/assets/categories/m-pants.jpg";
+import mPantsImg2 from "@/assets/categories/m-pants-2.jpg";
+import mPantsImg3 from "@/assets/categories/m-pants-3.jpg";
 import shortKurthiImg from "@/assets/categories/short-kurthi.jpg";
+import shortKurthiImg2 from "@/assets/categories/short-kurthi-2.jpg";
+import shortKurthiImg3 from "@/assets/categories/short-kurthi-3.jpg";
 import longKurthiImg from "@/assets/categories/long-kurthi.jpg";
+import longKurthiImg2 from "@/assets/categories/long-kurthi-2.jpg";
+import longKurthiImg3 from "@/assets/categories/long-kurthi-3.jpg";
 import shirtImg from "@/assets/categories/shirt.jpg";
+import shirtImg2 from "@/assets/categories/shirt-2.jpg";
+import shirtImg3 from "@/assets/categories/shirt-3.jpg";
 import mJeansImg from "@/assets/categories/m-jeans.jpg";
+import mJeansImg2 from "@/assets/categories/m-jeans-2.jpg";
+import mJeansImg3 from "@/assets/categories/m-jeans-3.jpg";
 import dhotiImg from "@/assets/categories/dhoti.jpg";
+import dhotiImg2 from "@/assets/categories/dhoti-2.jpg";
+import dhotiImg3 from "@/assets/categories/dhoti-3.jpg";
 
 export interface Category {
   id: string;
@@ -97,23 +127,23 @@ const colorSets = [
 const patterns = ["solid", "stripes", "dots", "checks", "floral", "paisley"];
 const fabrics = ["Silk", "Cotton", "Chiffon", "Georgette", "Linen", "Velvet", "Satin", "Crepe"];
 
-// Each category uses its own category image for all its designs
-const categoryImageMap: Record<string, string> = {
-  blouses: blouseImg,
-  sarees: sareeImg,
-  kurthi: kurthiImg,
-  lehenga: lehengaImg,
-  sharara: shararaImg,
-  "western-tops": westernTopImg,
-  "crop-tops": cropTopImg,
-  "w-jeans": wJeansImg,
-  "w-pants": wPantsImg,
-  "m-pants": mPantsImg,
-  "short-kurthi": shortKurthiImg,
-  "long-kurthi": longKurthiImg,
-  shirts: shirtImg,
-  "m-jeans": mJeansImg,
-  dhoti: dhotiImg,
+// 3 images per category for design variety
+const categoryImages: Record<string, string[]> = {
+  blouses: [blouseImg, blouseImg2, blouseImg3],
+  sarees: [sareeImg, sareeImg2, sareeImg3],
+  kurthi: [kurthiImg, kurthiImg2, kurthiImg3],
+  lehenga: [lehengaImg, lehengaImg2, lehengaImg3],
+  sharara: [shararaImg, shararaImg2, shararaImg3],
+  "western-tops": [westernTopImg, westernTopImg2, westernTopImg3],
+  "crop-tops": [cropTopImg, cropTopImg2, cropTopImg3],
+  "w-jeans": [wJeansImg, wJeansImg2, wJeansImg3],
+  "w-pants": [wPantsImg, wPantsImg2, wPantsImg3],
+  "m-pants": [mPantsImg, mPantsImg2, mPantsImg3],
+  "short-kurthi": [shortKurthiImg, shortKurthiImg2, shortKurthiImg3],
+  "long-kurthi": [longKurthiImg, longKurthiImg2, longKurthiImg3],
+  shirts: [shirtImg, shirtImg2, shirtImg3],
+  "m-jeans": [mJeansImg, mJeansImg2, mJeansImg3],
+  dhoti: [dhotiImg, dhotiImg2, dhotiImg3],
 };
 
 const designNames: Record<string, string[]> = {
@@ -137,7 +167,7 @@ const designNames: Record<string, string[]> = {
 export const designs: Design[] = [];
 
 categories.forEach((cat) => {
-  const catImage = categoryImageMap[cat.id] || "";
+  const images = categoryImages[cat.id] || [cat.image];
   const catNames = designNames[cat.id] || [];
   for (let i = 0; i < cat.designCount; i++) {
     const colorSet = colorSets[i % colorSets.length];
@@ -151,7 +181,7 @@ categories.forEach((cat) => {
       colors: { ...colorSet },
       pattern: patterns[i % patterns.length],
       fabric: fabrics[i % fabrics.length],
-      image: catImage,
+      image: images[i % images.length],
     });
   }
 });
