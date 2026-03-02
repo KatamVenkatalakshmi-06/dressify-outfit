@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
-import GarmentPreview from "@/components/GarmentPreview";
 import { Button } from "@/components/ui/button";
 import { designs, availablePatterns, availableColors } from "@/data/designs";
 import { useApp } from "@/contexts/AppContext";
@@ -21,6 +20,8 @@ export default function Editor() {
   const [isEditing, setIsEditing] = useState(false);
 
   if (!design) return <MainLayout><div className="p-12">Design not found</div></MainLayout>;
+
+  const patternClass = availablePatterns.find((p) => p.id === pattern)?.className || "";
 
   const handleColorChange = (color: string) => {
     setColors((prev) => ({ ...prev, [activePart]: color }));
@@ -68,9 +69,30 @@ export default function Editor() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Preview */}
-          <div className="bg-card rounded-3xl p-12 shadow-sm border border-border flex items-center justify-center min-h-[400px]">
-            <GarmentPreview colors={colors} pattern={pattern} size="lg" />
+          {/* Preview — actual design image */}
+          <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden min-h-[400px]">
+            <div className="relative w-full aspect-[3/4]">
+              <img
+                src={design.image}
+                alt={design.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {/* Color overlay for body */}
+              <div
+                className="absolute inset-0 mix-blend-multiply opacity-25"
+                style={{ backgroundColor: colors.body }}
+              />
+              {/* Pattern overlay */}
+              {patternClass && (
+                <div className={`absolute inset-0 ${patternClass} opacity-15`} />
+              )}
+              {/* Border color strip at bottom */}
+              <div
+                className="absolute inset-x-0 bottom-0 h-12 mix-blend-multiply opacity-30"
+                style={{ backgroundColor: colors.border }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+            </div>
           </div>
 
           {/* Editor Panel */}
@@ -115,7 +137,6 @@ export default function Editor() {
                     />
                   ))}
                 </div>
-                {/* Custom color */}
                 <div className="mt-3 flex items-center gap-2">
                   <label className="text-sm text-muted-foreground">Custom:</label>
                   <input

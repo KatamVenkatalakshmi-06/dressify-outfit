@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
-import GarmentPreview from "@/components/GarmentPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useApp } from "@/contexts/AppContext";
@@ -50,11 +49,19 @@ export default function Canvas() {
         <p className="text-muted-foreground mb-10">Review your design and enter measurements</p>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Preview */}
-          <div className="bg-card rounded-3xl p-10 shadow-sm border border-border">
-            <h3 className="font-display text-lg font-semibold mb-6 text-center">{saved.name}</h3>
-            <GarmentPreview colors={saved.colors} pattern={saved.pattern} size="lg" />
-            <div className="mt-6 text-center">
+          {/* Preview — real image */}
+          <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
+            <h3 className="font-display text-lg font-semibold p-6 pb-0 text-center">{saved.name}</h3>
+            <div className="relative w-full aspect-[3/4] mt-4">
+              <img
+                src={design?.image || ""}
+                alt={saved.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 mix-blend-multiply opacity-20" style={{ backgroundColor: saved.colors.body }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+            </div>
+            <div className="p-4 text-center">
               <p className="text-sm text-muted-foreground capitalize">Pattern: {saved.pattern}</p>
               <div className="flex justify-center gap-2 mt-2">
                 {Object.entries(saved.colors).map(([part, color]) => (
