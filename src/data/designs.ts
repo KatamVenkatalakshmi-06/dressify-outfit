@@ -166,22 +166,40 @@ const designNames: Record<string, string[]> = {
 
 export const designs: Design[] = [];
 
+function seededIndex(index: number, length: number, seed: number) {
+  const raw = Math.sin((index + 1) * (seed + 1) * 12.9898) * 43758.5453;
+  return Math.floor((raw - Math.floor(raw)) * length);
+}
+
 categories.forEach((cat) => {
   const images = categoryImages[cat.id] || [cat.image];
   const catNames = designNames[cat.id] || [];
+  const seed = cat.id.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  let lastImageIndex = -1;
+
   for (let i = 0; i < cat.designCount; i++) {
-    const colorSet = colorSets[i % colorSets.length];
+    const colorSet = colorSets[seededIndex(i, colorSets.length, seed + 7)];
+    const pattern = patterns[seededIndex(i, patterns.length, seed + 13)];
+    const fabric = fabrics[seededIndex(i, fabrics.length, seed + 23)];
+
     const nameBase = catNames[i % catNames.length];
     const nameNum = Math.floor(i / catNames.length) + 1;
+
+    let imageIndex = seededIndex(i, images.length, seed + 31);
+    if (images.length > 1 && imageIndex === lastImageIndex) {
+      imageIndex = (imageIndex + 1) % images.length;
+    }
+    lastImageIndex = imageIndex;
+
     designs.push({
       id: `${cat.id}-${i + 1}`,
       name: nameNum > 1 ? `${nameBase} ${nameNum}` : nameBase,
       categoryId: cat.id,
       gender: cat.gender,
       colors: { ...colorSet },
-      pattern: patterns[i % patterns.length],
-      fabric: fabrics[i % fabrics.length],
-      image: images[i % images.length],
+      pattern,
+      fabric,
+      image: images[imageIndex],
     });
   }
 });
