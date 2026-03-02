@@ -1,9 +1,9 @@
 import { useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
-import GarmentPreview from "@/components/GarmentPreview";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/contexts/AppContext";
+import { designs } from "@/data/designs";
 import { Download, Ruler, Layers, ArrowLeft } from "lucide-react";
 
 export default function FinalView() {
@@ -23,10 +23,9 @@ export default function FinalView() {
     );
   }
 
+  const design = designs.find((d) => d.id === saved.designId);
+
   const handleDownload = () => {
-    const el = printRef.current;
-    if (!el) return;
-    // Create a simple text-based download
     const content = `
 DRESSIFY - Custom Design Report
 ================================
@@ -73,10 +72,18 @@ ${saved.fabricInfo.breakdown.map((b) => `  ${b.part}: ${b.meters} meters`).join(
           <h1 className="font-display text-3xl font-bold mb-8 animate-fade-in">Your Final Design</h1>
 
           <div className="grid lg:grid-cols-2 gap-10">
-            {/* Design Preview */}
-            <div className="bg-card rounded-3xl p-10 shadow-sm border border-border">
-              <GarmentPreview colors={saved.colors} pattern={saved.pattern} size="lg" />
-              <div className="mt-6 text-center">
+            {/* Design Preview — real image */}
+            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
+              <div className="relative w-full aspect-[3/4]">
+                <img
+                  src={design?.image || ""}
+                  alt={saved.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 mix-blend-multiply opacity-20" style={{ backgroundColor: saved.colors.body }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              </div>
+              <div className="p-6 text-center">
                 <h3 className="font-display text-xl font-semibold">{saved.name}</h3>
                 <p className="text-sm text-muted-foreground capitalize mt-1">{saved.pattern} pattern</p>
                 <div className="flex justify-center gap-3 mt-3">
@@ -92,7 +99,6 @@ ${saved.fabricInfo.breakdown.map((b) => `  ${b.part}: ${b.meters} meters`).join(
 
             {/* Info */}
             <div className="space-y-6">
-              {/* Fabric Alert */}
               <div className="bg-gold/10 rounded-2xl p-6 border border-gold/30">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
                   <Layers size={18} className="text-gold" /> Fabric Requirements
@@ -116,7 +122,6 @@ ${saved.fabricInfo.breakdown.map((b) => `  ${b.part}: ${b.meters} meters`).join(
                 </div>
               </div>
 
-              {/* Measurements */}
               <div className="bg-card rounded-2xl p-6 border border-border">
                 <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2">
                   <Ruler size={18} /> Your Measurements
