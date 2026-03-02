@@ -24,7 +24,8 @@ const allowedOrigins = [
 
 const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        const isLocalDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || '');
+        if (!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && isLocalDevOrigin)) {
             callback(null, true);
         } else {
             console.warn(`CORS blocked request from: ${origin}`);
@@ -40,9 +41,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Connect to MongoDB
-connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -72,21 +70,36 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-    console.log(`✓ Backend server running on port ${PORT}`);
-    console.log(`✓ Environment: ${process.env.NODE_ENV}`);
-    console.log(`✓ CORS enabled for: ${allowedOrigins.slice(0, 3).join(', ')} + others`);
-    if (process.env.NODE_ENV === 'production') {
-        console.log('✓ Production mode active');
-    }
-});
+// Start server with proper database connection
+async function startServer() {
+    try {
+        // Connect to MongoDB first
+        await connectDB();
+        console.log('✓ Database connection verified');
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully...');
-    server.close(() => {
-        console.log('✓ Server closed');
-        process.exit(0);
-    });
-});
+        // Start server after DB connection
+        const server = app.listen(PORT, () => {
+            console.log(`✓ Backend server running on port ${PORT}`);
+            console.log(`✓ Environment: ${process.env.NODE_ENV}`);
+            console.log(`✓ CORS enabled for: ${allowedOrigins.slice(0, 3).join(', ')} + others`);
+            if (process.env.NODE_ENV === 'production') {
+                console.log('✓ Production mode active');
+            }
+        });
+
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            console.log('SIGTERM received, shutting down gracefully...');
+            server.close(() => {
+                console.log('✓ Server closed');
+                process.exit(0);
+            });
+        });
+    } catch (error) {
+        console.error('✗ Failed to start server:', error.message);
+        process.exit(1);
+    }
+}
+
+// Start the server
+startServer();

@@ -1,9 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import { getDB } from '../config/db.js';
 import { generateToken, verifyToken } from '../middleware/auth.js';
-import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
@@ -17,35 +17,32 @@ router.post('/signup', async (req, res) => {
         }
 
         const db = getDB();
-        const usersCollection = db.collection('users');
 
         // Check if user already exists
-        const existingUser = await usersCollection.findOne({ email });
+        const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
         if (existingUser) {
             return res.status(400).json({ error: 'User with this email already exists' });
         }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
+        const userId = uuidv4();
+        const now = new Date().toISOString();
 
         // Create user
-        const result = await usersCollection.insertOne({
-            name,
-            email,
-            password: hashedPassword,
-            authProvider: 'email',
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+        db.prepare(`
+            INSERT INTO users (_id, name, email, password, authProvider, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(userId, name, email, hashedPassword, 'email', now, now);
 
-        const token = generateToken(result.insertedId.toString(), email);
+        const token = generateToken(userId, email);
 
         res.status(201).json({
             success: true,
             message: 'User registered successfully',
             token,
             user: {
-                id: result.insertedId.toString(),
+                id: userId,
                 name,
                 email
             }
@@ -66,7 +63,7 @@ router.post('/login', async (req, res) => {
         }
 
         const db = getDB();
-        const user = await db.collection('users').findOne({ email });
+        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
         if (!user) {
             return res.status(401).json({ error: 'Invalid email or password' });
@@ -78,14 +75,14 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        const token = generateToken(user._id.toString(), user.email);
+        const token = generateToken(user._id, user.email);
 
         res.json({
             success: true,
             message: 'Login successful',
             token,
             user: {
-                id: user._id.toString(),
+                id: user._id,
                 name: user.name,
                 email: user.email
             }
@@ -113,56 +110,38 @@ router.post('/google', async (req, res) => {
         const { email, name, picture, id: googleId } = response.data;
 
         const db = getDB();
-        const usersCollection = db.collection('users');
 
         // Check if user exists
-        let user = await usersCollection.findOne({ email });
+        let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        const now = new Date().toISOString();
 
         if (!user) {
             // Create new user from Google
-            const result = await usersCollection.insertOne({
-                name: name || email.split('@')[0],
-                email,
-                googleId,
-                picture,
-                authProvider: 'google',
-                password: null,
-                createdAt: new Date(),
-                updatedAt: new Date()
-            });
+            const userId = uuidv4();
+            db.prepare(`
+                INSERT INTO users (_id, name, email, password, picture, authProvider, createdAt, updatedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(userId, name || email.split('@')[0], email, null, picture || null, 'google', now, now);
 
             user = {
-                _id: result.insertedId,
+                _id: userId,
                 name: name || email.split('@')[0],
                 email,
-                googleId
+                picture
             };
-        } else if (!user.googleId) {
-            // Update existing user with Google ID
-            await usersCollection.updateOne(
-                { _id: user._id },
-                {
-                    $set: {
-                        googleId,
-                        picture,
-                        authProvider: 'google',
-                        updatedAt: new Date()
-                    }
-                }
-            );
         }
 
-        const token = generateToken(user._id.toString(), user.email);
+        const token = generateToken(user._id, user.email);
 
         res.json({
             success: true,
             message: 'Google login successful',
             token,
             user: {
-                id: user._id.toString(),
+                id: user._id,
                 name: user.name || email.split('@')[0],
                 email,
-                picture
+                picture: user.picture
             }
         });
     } catch (error) {

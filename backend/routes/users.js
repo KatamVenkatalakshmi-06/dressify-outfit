@@ -1,7 +1,7 @@
 import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { getDB } from '../config/db.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
@@ -9,10 +9,9 @@ const router = express.Router();
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
         const db = getDB();
-        const user = await db.collection('users').findOne(
-            { _id: new ObjectId(req.user.userId) },
-            { projection: { password: 0 } }
-        );
+        const user = db.prepare(
+            'SELECT _id, name, email, picture, authProvider, createdAt FROM users WHERE _id = ?'
+        ).get(req.user.userId);
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -21,7 +20,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
         res.json({
             success: true,
             user: {
-                id: user._id.toString(),
+                id: user._id,
                 name: user.name,
                 email: user.email,
                 picture: user.picture,
@@ -40,20 +39,26 @@ router.put('/profile', authMiddleware, async (req, res) => {
     try {
         const { name, picture } = req.body;
         const db = getDB();
+        const now = new Date().toISOString();
 
-        const updateData = {
-            updatedAt: new Date()
-        };
+        let query = 'UPDATE users SET updatedAt = ?';
+        const params = [now];
 
-        if (name) updateData.name = name;
-        if (picture) updateData.picture = picture;
+        if (name) {
+            query += ', name = ?';
+            params.push(name);
+        }
+        if (picture) {
+            query += ', picture = ?';
+            params.push(picture);
+        }
 
-        const result = await db.collection('users').updateOne(
-            { _id: new ObjectId(req.user.userId) },
-            { $set: updateData }
-        );
+        query += ' WHERE _id = ?';
+        params.push(req.user.userId);
 
-        if (result.matchedCount === 0) {
+        const result = db.prepare(query).run(...params);
+
+        if (result.changes === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
 
@@ -70,21 +75,28 @@ router.put('/profile', authMiddleware, async (req, res) => {
 // Save user design
 router.post('/save-design', authMiddleware, async (req, res) => {
     try {
-        const { designData, name } = req.body;
+        const { designData, name, description } = req.body;
         const db = getDB();
+        const designId = uuidv4();
+        const now = new Date().toISOString();
 
-        const result = await db.collection('saved_designs').insertOne({
-            userId: new ObjectId(req.user.userId),
-            name,
-            designData,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
+        db.prepare(`
+            INSERT INTO designs (_id, userId, name, description, designData, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            designId,
+            req.user.userId,
+            name || 'Untitled Design',
+            description || '',
+            JSON.stringify(designData),
+            now,
+            now
+        );
 
         res.status(201).json({
             success: true,
             message: 'Design saved successfully',
-            designId: result.insertedId.toString()
+            designId: designId
         });
     } catch (error) {
         console.error('Save design error:', error);
@@ -96,17 +108,17 @@ router.post('/save-design', authMiddleware, async (req, res) => {
 router.get('/saved-designs', authMiddleware, async (req, res) => {
     try {
         const db = getDB();
-        const designs = await db.collection('saved_designs')
-            .find({ userId: new ObjectId(req.user.userId) })
-            .sort({ createdAt: -1 })
-            .toArray();
+        const designs = db.prepare(
+            'SELECT _id, name, description, designData, createdAt FROM designs WHERE userId = ? ORDER BY createdAt DESC'
+        ).all(req.user.userId);
 
         res.json({
             success: true,
             designs: designs.map(d => ({
-                id: d._id.toString(),
+                id: d._id,
                 name: d.name,
-                designData: d.designData,
+                description: d.description,
+                designData: JSON.parse(d.designData || '{}'),
                 createdAt: d.createdAt
             }))
         });

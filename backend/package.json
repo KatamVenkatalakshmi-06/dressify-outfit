@@ -6,16 +6,17 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "node --watch server.js"
+        "dev": "node --watch server.js",
+        "verify-db": "node verify-db.js"
     },
     "dependencies": {
-        "express": "^4.18.2",
-        "cors": "^2.8.5",
-        "dotenv": "^16.3.1",
-        "mongodb": "^6.3.0",
+        "axios": "^1.4.0",
         "bcryptjs": "^2.4.3",
-        "jsonwebtoken": "^9.1.2",
-        "google-auth-library": "^9.4.1",
-        "axios": "^1.6.2"
+        "better-sqlite3": "11.10.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.0",
+        "uuid": "^9.0.0"
     }
 }
