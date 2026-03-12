@@ -193,40 +193,24 @@ const designNames: Record<string, string[]> = {
   dhoti: ["Classic", "Festive", "Silk", "Cotton", "Printed", "Embroidered", "Wedding", "Casual", "Pleated", "Modern"],
 };
 
-function seededIndex(index: number, length: number, seed: number) {
-  const raw = Math.sin((index + 1) * (seed + 1) * 12.9898) * 43758.5453;
-  return Math.abs(Math.floor(raw) % length);
-}
-
 export const designs: Design[] = [];
 
 categories.forEach((cat) => {
   const images = categoryImages[cat.id] || [cat.image];
   const catNames = designNames[cat.id] || [];
-  const seed = cat.id.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
-  const recentImageIndexes: number[] = [];
+  const imgCount = images.length;
 
   for (let i = 0; i < cat.designCount; i++) {
-    const colorSet = colorSets[seededIndex(i, colorSets.length, seed + 7)];
-    const pattern = patterns[seededIndex(i, patterns.length, seed + 13)];
-    const fabric = fabrics[seededIndex(i, fabrics.length, seed + 23)];
+    const colorSet = colorSets[i % colorSets.length];
+    const pattern = patterns[i % patterns.length];
+    const fabric = fabrics[i % fabrics.length];
 
     const nameBase = catNames[i % catNames.length];
     const nameNum = Math.floor(i / catNames.length) + 1;
 
-    // Pick image, avoiding the last 2 used images to prevent adjacent repeats
-    let imageIndex = seededIndex(i, images.length, seed + 31);
-    if (images.length > 2) {
-      let attempts = 0;
-      while (recentImageIndexes.includes(imageIndex) && attempts < images.length) {
-        imageIndex = (imageIndex + 1) % images.length;
-        attempts++;
-      }
-    } else if (images.length > 1 && recentImageIndexes[recentImageIndexes.length - 1] === imageIndex) {
-      imageIndex = (imageIndex + 1) % images.length;
-    }
-    recentImageIndexes.push(imageIndex);
-    if (recentImageIndexes.length > 2) recentImageIndexes.shift();
+    // Simple round-robin ensures no two adjacent items share the same image
+    // since imgCount=5 and we cycle 0,1,2,3,4,0,1,2,3,4...
+    const imageIndex = i % imgCount;
 
     designs.push({
       id: `${cat.id}-${i + 1}`,

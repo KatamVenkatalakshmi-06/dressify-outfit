@@ -1,24 +1,16 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { SavedDesign, Measurements, FabricInfo } from "@/data/designs";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  picture?: string;
-}
+import { supabase } from "@/integrations/supabase/client";
+import type { User as SupaUser } from "@supabase/supabase-js";
 
 interface AppState {
   isLoggedIn: boolean;
   userName: string;
-  user: User | null;
-  token: string | null;
+  user: SupaUser | null;
   savedDesigns: SavedDesign[];
-  login: (name: string, user?: User, token?: string) => void;
   logout: () => void;
   saveDesign: (design: SavedDesign) => void;
   updateDesignMeasurements: (id: string, measurements: Measurements, fabricInfo: FabricInfo) => void;
-  setUser: (user: User, token: string) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -26,58 +18,40 @@ const AppContext = createContext<AppState | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
-  const [user, setUserState] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<SupaUser | null>(null);
   const [savedDesigns, setSavedDesigns] = useState<SavedDesign[]>([]);
 
-  // Restore session from localStorage on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-
-    if (savedToken && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUserState(userData);
-        setToken(savedToken);
+    // Set up auth listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
         setIsLoggedIn(true);
-        setUserName(userData.name);
-      } catch (error) {
-        console.error("Failed to restore session:", error);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        setUserName(session.user.user_metadata?.name || session.user.email || "");
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+        setUserName("");
       }
-    }
+    });
+
+    // Then check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoggedIn(true);
+        setUserName(session.user.user_metadata?.name || session.user.email || "");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (name: string, userData?: User, authToken?: string) => {
-    setIsLoggedIn(true);
-    setUserName(name);
-
-    if (userData && authToken) {
-      setUserState(userData);
-      setToken(authToken);
-      localStorage.setItem("token", authToken);
-      localStorage.setItem("user", JSON.stringify(userData));
-    }
-  };
-
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
     setUserName("");
-    setUserState(null);
-    setToken(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  };
-
-  const setUser = (userData: User, authToken: string) => {
-    setUserState(userData);
-    setToken(authToken);
-    setIsLoggedIn(true);
-    setUserName(userData.name);
-    localStorage.setItem("token", authToken);
-    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(null);
   };
 
   const saveDesign = (design: SavedDesign) => {
@@ -99,7 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ isLoggedIn, userName, user, token, savedDesigns, login, logout, saveDesign, updateDesignMeasurements, setUser }}>
+    <AppContext.Provider value={{ isLoggedIn, userName, user, savedDesigns, logout, saveDesign, updateDesignMeasurements }}>
       {children}
     </AppContext.Provider>
   );
