@@ -8,6 +8,7 @@ import { Save, Palette, Layers, GripVertical } from "lucide-react";
 import DraggableCanvas from "@/components/editor/DraggableCanvas";
 import ElementPanel from "@/components/editor/ElementPanel";
 import { PlacedElement } from "@/components/editor/designElements";
+import { getGarmentMaskConfig } from "@/components/editor/garmentMasks";
 
 type Part = "body" | "sleeve" | "border";
 
@@ -24,6 +25,8 @@ export default function Editor() {
   const [activeTab, setActiveTab] = useState<"elements" | "colors">("elements");
 
   if (!design) return <MainLayout><div className="p-12">Design not found</div></MainLayout>;
+
+  const maskConfig = getGarmentMaskConfig(design.categoryId);
 
   const handleColorChange = (color: string) => {
     setColors((prev) => ({ ...prev, [activePart]: color }));
@@ -68,19 +71,18 @@ export default function Editor() {
         </div>
 
         <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-          {/* Canvas with drag-drop */}
           <DraggableCanvas
             imageSrc={design.image}
             imageAlt={design.name}
             placedElements={placedElements}
             onElementsChange={setPlacedElements}
             colors={colors}
+            categoryId={design.categoryId}
+            activePart={isEditing ? activePart : undefined}
           />
 
-          {/* Right Panel */}
           {isEditing ? (
             <div className="space-y-6 animate-fade-in overflow-y-auto max-h-[80vh]">
-              {/* Tab switcher */}
               <div className="flex gap-2 bg-muted rounded-xl p-1">
                 <button
                   onClick={() => setActiveTab("elements")}
@@ -104,33 +106,43 @@ export default function Editor() {
 
               {activeTab === "colors" && (
                 <div className="space-y-6">
-                  {/* Part Selector */}
+                  {/* Region Selector — uses category-specific part labels */}
                   <div>
                     <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-                      <Layers size={18} /> Select Part
+                      <Layers size={18} /> Select Region
                     </h3>
-                    <div className="flex gap-2">
-                      {(["body", "sleeve", "border"] as Part[]).map((part) => (
+                    <div className="flex flex-col gap-2">
+                      {maskConfig.parts.map((part) => (
                         <button
-                          key={part}
-                          onClick={() => setActivePart(part)}
-                          className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all ${
-                            activePart === part
+                          key={part.id}
+                          onClick={() => setActivePart(part.id as Part)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                            activePart === part.id
                               ? "burgundy-gradient text-primary-foreground shadow-md"
                               : "bg-muted text-muted-foreground hover:bg-muted/80"
                           }`}
                         >
-                          {part}
+                          <div
+                            className="w-6 h-6 rounded-full border-2 border-background shadow-sm shrink-0"
+                            style={{ backgroundColor: colors[part.id as Part] }}
+                          />
+                          <span>{part.label}</span>
+                          {activePart === part.id && (
+                            <span className="ml-auto text-xs opacity-75">Active</span>
+                          )}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Color Picker */}
+                  {/* Color Palette */}
                   <div>
-                    <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-                      <Palette size={18} /> Colors
+                    <h3 className="font-display text-lg font-semibold mb-1 flex items-center gap-2">
+                      <Palette size={18} /> Choose Color
                     </h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Applying to: <span className="font-semibold text-foreground">{maskConfig.parts.find(p => p.id === activePart)?.label}</span>
+                    </p>
                     <div className="grid grid-cols-6 gap-2">
                       {availableColors.map((color) => (
                         <button
@@ -154,6 +166,22 @@ export default function Editor() {
                       <span className="text-xs text-muted-foreground font-mono">{colors[activePart]}</span>
                     </div>
                   </div>
+
+                  {/* Live color summary */}
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold mb-2">Current Colors</h4>
+                    <div className="space-y-2">
+                      {maskConfig.parts.map((part) => (
+                        <div key={part.id} className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">{part.label}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded-full border border-border" style={{ backgroundColor: colors[part.id as Part] }} />
+                            <span className="font-mono text-xs">{colors[part.id as Part]}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -174,7 +202,7 @@ export default function Editor() {
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">Click "Edit Design" to drag & drop design elements like flowers, mandalas, and geometric patterns onto the garment.</p>
+              <p className="text-sm text-muted-foreground">Click "Edit Design" to customize colors for specific garment regions and add design elements.</p>
             </div>
           )}
         </div>

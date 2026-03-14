@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { PlacedElement, designElements } from "./designElements";
+import { getGarmentMaskConfig } from "./garmentMasks";
 import { Trash2, RotateCw, Minus, Plus } from "lucide-react";
 
 interface Props {
@@ -8,13 +9,17 @@ interface Props {
   placedElements: PlacedElement[];
   onElementsChange: (elements: PlacedElement[]) => void;
   colors: { body: string; sleeve: string; border: string };
+  categoryId?: string;
+  activePart?: string;
 }
 
-export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, onElementsChange, colors }: Props) {
+export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, onElementsChange, colors, categoryId = "", activePart }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const maskConfig = getGarmentMaskConfig(categoryId);
 
   const getPercent = useCallback((clientX: number, clientY: number) => {
     if (!canvasRef.current) return { x: 50, y: 50 };
@@ -48,9 +53,7 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
     );
   };
 
-  const handlePointerUp = () => {
-    setDragging(null);
-  };
+  const handlePointerUp = () => setDragging(null);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -87,9 +90,50 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
 
   const selectedElement = placedElements.find((el) => el.id === selectedId);
 
+  // Render color overlays from mask config
+  const renderColorOverlays = () => {
+    const partKeys = ["body", "sleeve", "border"] as const;
+    return partKeys.flatMap((partKey) => {
+      const regions = maskConfig.regions[partKey] || [];
+      const color = colors[partKey];
+      return regions.map((region) => {
+        const isActive = activePart === partKey;
+        return (
+          <div
+            key={region.name}
+            className="absolute inset-0 transition-all duration-300 pointer-events-none"
+            style={{
+              backgroundColor: color,
+              clipPath: region.clipPath,
+              mixBlendMode: region.blendMode as React.CSSProperties["mixBlendMode"],
+              opacity: isActive ? region.opacity + 0.15 : region.opacity,
+            }}
+          />
+        );
+      });
+    });
+  };
+
+  // Render active region highlight outline
+  const renderActiveHighlight = () => {
+    if (!activePart) return null;
+    const regions = maskConfig.regions[activePart] || [];
+    return regions.map((region) => (
+      <div
+        key={`highlight-${region.name}`}
+        className="absolute inset-0 pointer-events-none animate-pulse"
+        style={{
+          clipPath: region.clipPath,
+          border: "none",
+          boxShadow: "inset 0 0 0 2px hsl(var(--primary) / 0.6)",
+          background: "hsl(var(--primary) / 0.08)",
+        }}
+      />
+    ));
+  };
+
   return (
     <div className="space-y-3">
-      {/* Canvas */}
       <div
         ref={canvasRef}
         className="relative w-full aspect-[3/4] bg-card rounded-3xl shadow-sm border border-border overflow-hidden cursor-crosshair select-none"
@@ -99,45 +143,19 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
         onPointerUp={handlePointerUp}
         onClick={() => setSelectedId(null)}
       >
+        {/* Base garment image */}
         <img src={imageSrc} alt={imageAlt} className="absolute inset-0 w-full h-full object-cover" />
-        
-        {/* Body color — center torso area only */}
-        <div
-          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
-          style={{
-            backgroundColor: colors.body,
-            clipPath: "polygon(25% 15%, 75% 15%, 78% 85%, 22% 85%)",
-          }}
-        />
-        
-        {/* Sleeve color — left and right arm areas */}
-        <div
-          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
-          style={{
-            backgroundColor: colors.sleeve,
-            clipPath: "polygon(0% 12%, 25% 15%, 22% 50%, 0% 45%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
-          style={{
-            backgroundColor: colors.sleeve,
-            clipPath: "polygon(75% 15%, 100% 12%, 100% 45%, 78% 50%)",
-          }}
-        />
-        
-        {/* Border color — bottom hem/border strip */}
-        <div
-          className="absolute inset-0 mix-blend-color opacity-55 transition-colors duration-300 pointer-events-none"
-          style={{
-            backgroundColor: colors.border,
-            clipPath: "polygon(15% 82%, 85% 82%, 88% 100%, 12% 100%)",
-          }}
-        />
-        
+
+        {/* Category-specific color overlays */}
+        {renderColorOverlays()}
+
+        {/* Active region highlight */}
+        {renderActiveHighlight()}
+
+        {/* Subtle depth gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
 
-        {/* Placed elements */}
+        {/* Placed design elements */}
         {placedElements.map((el) => {
           const def = designElements.find((d) => d.id === el.elementId);
           if (!def) return null;
@@ -176,73 +194,30 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
               <Trash2 size={14} />
             </button>
           </div>
-
-          {/* Size */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-12">Size</span>
-            <button onClick={() => updateSelected({ size: Math.max(20, selectedElement.size - 5) })} className="p-1 rounded bg-muted">
-              <Minus size={12} />
-            </button>
-            <input
-              type="range"
-              min={20}
-              max={120}
-              value={selectedElement.size}
-              onChange={(e) => updateSelected({ size: Number(e.target.value) })}
-              className="flex-1 h-1.5 accent-primary"
-            />
-            <button onClick={() => updateSelected({ size: Math.min(120, selectedElement.size + 5) })} className="p-1 rounded bg-muted">
-              <Plus size={12} />
-            </button>
+            <button onClick={() => updateSelected({ size: Math.max(20, selectedElement.size - 5) })} className="p-1 rounded bg-muted"><Minus size={12} /></button>
+            <input type="range" min={20} max={120} value={selectedElement.size} onChange={(e) => updateSelected({ size: Number(e.target.value) })} className="flex-1 h-1.5 accent-primary" />
+            <button onClick={() => updateSelected({ size: Math.min(120, selectedElement.size + 5) })} className="p-1 rounded bg-muted"><Plus size={12} /></button>
           </div>
-
-          {/* Rotation */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-12">Rotate</span>
             <RotateCw size={12} className="text-muted-foreground" />
-            <input
-              type="range"
-              min={0}
-              max={360}
-              value={selectedElement.rotation}
-              onChange={(e) => updateSelected({ rotation: Number(e.target.value) })}
-              className="flex-1 h-1.5 accent-primary"
-            />
+            <input type="range" min={0} max={360} value={selectedElement.rotation} onChange={(e) => updateSelected({ rotation: Number(e.target.value) })} className="flex-1 h-1.5 accent-primary" />
             <span className="text-xs text-muted-foreground w-8">{selectedElement.rotation}°</span>
           </div>
-
-          {/* Color */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-12">Color</span>
-            <input
-              type="color"
-              value={selectedElement.color}
-              onChange={(e) => updateSelected({ color: e.target.value })}
-              className="w-7 h-7 rounded cursor-pointer border-0"
-            />
+            <input type="color" value={selectedElement.color} onChange={(e) => updateSelected({ color: e.target.value })} className="w-7 h-7 rounded cursor-pointer border-0" />
             <div className="flex gap-1">
               {["#D4A853", "#FFFFFF", "#FFD700", "#C0C0C0", "#8B1A4A", "#1A237E"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => updateSelected({ color: c })}
-                  className={`w-5 h-5 rounded-full border ${selectedElement.color === c ? "border-primary ring-1 ring-primary" : "border-border"}`}
-                  style={{ backgroundColor: c }}
-                />
+                <button key={c} onClick={() => updateSelected({ color: c })} className={`w-5 h-5 rounded-full border ${selectedElement.color === c ? "border-primary ring-1 ring-primary" : "border-border"}`} style={{ backgroundColor: c }} />
               ))}
             </div>
           </div>
-
-          {/* Opacity */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-12">Opacity</span>
-            <input
-              type="range"
-              min={10}
-              max={100}
-              value={selectedElement.opacity * 100}
-              onChange={(e) => updateSelected({ opacity: Number(e.target.value) / 100 })}
-              className="flex-1 h-1.5 accent-primary"
-            />
+            <input type="range" min={10} max={100} value={selectedElement.opacity * 100} onChange={(e) => updateSelected({ opacity: Number(e.target.value) / 100 })} className="flex-1 h-1.5 accent-primary" />
             <span className="text-xs text-muted-foreground w-8">{Math.round(selectedElement.opacity * 100)}%</span>
           </div>
         </div>
