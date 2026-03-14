@@ -61,7 +61,7 @@ export default function Editor() {
               </Button>
             ) : (
               <Button onClick={handleSave} className="gold-gradient border-none text-secondary-foreground">
-                <Save className="mr-2" size={18} /> Save & Continue
+                <Save className="mr-2" size={18} /> Save & Enter Measurements
               </Button>
             )}
           </div>
