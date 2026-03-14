@@ -100,19 +100,41 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
         onClick={() => setSelectedId(null)}
       >
         <img src={imageSrc} alt={imageAlt} className="absolute inset-0 w-full h-full object-cover" />
-        {/* Color tint overlays for each part */}
+        
+        {/* Body color — center torso area only */}
         <div
-          className="absolute inset-0 mix-blend-color opacity-40 transition-colors duration-300 pointer-events-none"
-          style={{ backgroundColor: colors.body }}
+          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
+          style={{
+            backgroundColor: colors.body,
+            clipPath: "polygon(25% 15%, 75% 15%, 78% 85%, 22% 85%)",
+          }}
+        />
+        
+        {/* Sleeve color — left and right arm areas */}
+        <div
+          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
+          style={{
+            backgroundColor: colors.sleeve,
+            clipPath: "polygon(0% 12%, 25% 15%, 22% 50%, 0% 45%)",
+          }}
         />
         <div
-          className="absolute inset-x-0 top-0 h-[30%] mix-blend-color opacity-30 transition-colors duration-300 pointer-events-none"
-          style={{ backgroundColor: colors.sleeve }}
+          className="absolute inset-0 mix-blend-color opacity-45 transition-colors duration-300 pointer-events-none"
+          style={{
+            backgroundColor: colors.sleeve,
+            clipPath: "polygon(75% 15%, 100% 12%, 100% 45%, 78% 50%)",
+          }}
         />
+        
+        {/* Border color — bottom hem/border strip */}
         <div
-          className="absolute inset-x-0 bottom-0 h-[10%] mix-blend-multiply opacity-50 transition-colors duration-300 pointer-events-none"
-          style={{ backgroundColor: colors.border }}
+          className="absolute inset-0 mix-blend-color opacity-55 transition-colors duration-300 pointer-events-none"
+          style={{
+            backgroundColor: colors.border,
+            clipPath: "polygon(15% 82%, 85% 82%, 88% 100%, 12% 100%)",
+          }}
         />
+        
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
 
         {/* Placed elements */}
