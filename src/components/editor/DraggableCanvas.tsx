@@ -100,7 +100,20 @@ export default function DraggableCanvas({ imageSrc, imageAlt, placedElements, on
         onClick={() => setSelectedId(null)}
       >
         <img src={imageSrc} alt={imageAlt} className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+        {/* Color tint overlays for each part */}
+        <div
+          className="absolute inset-0 mix-blend-color opacity-40 transition-colors duration-300 pointer-events-none"
+          style={{ backgroundColor: colors.body }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 h-[30%] mix-blend-color opacity-30 transition-colors duration-300 pointer-events-none"
+          style={{ backgroundColor: colors.sleeve }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[10%] mix-blend-multiply opacity-50 transition-colors duration-300 pointer-events-none"
+          style={{ backgroundColor: colors.border }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
 
         {/* Placed elements */}
         {placedElements.map((el) => {
