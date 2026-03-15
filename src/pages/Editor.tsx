@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { designs, availableColors } from "@/data/designs";
 import { useApp } from "@/contexts/AppContext";
-import { Save, Palette, Layers, GripVertical } from "lucide-react";
+import { Save, Palette, Layers, GripVertical, Download, Sparkles, Shirt } from "lucide-react";
 import DraggableCanvas from "@/components/editor/DraggableCanvas";
 import ElementPanel from "@/components/editor/ElementPanel";
+import PatternPanel from "@/components/editor/PatternPanel";
 import { PlacedElement } from "@/components/editor/designElements";
 import { getGarmentMaskConfig } from "@/components/editor/garmentMasks";
+import { FabricPattern, getColorSuggestions } from "@/components/editor/fabricPatterns";
+import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
 
 type Part = "body" | "sleeve" | "border";
 
@@ -16,20 +20,38 @@ export default function Editor() {
   const { designId } = useParams<{ designId: string }>();
   const navigate = useNavigate();
   const { saveDesign } = useApp();
+  const { toast } = useToast();
   const design = designs.find((d) => d.id === designId);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const [colors, setColors] = useState(design?.colors || { body: "#8B1A4A", sleeve: "#A0285C", border: "#D4A853" });
+  const [patterns, setPatterns] = useState<{ body: FabricPattern | null; sleeve: FabricPattern | null; border: FabricPattern | null }>({
+    body: null, sleeve: null, border: null,
+  });
   const [activePart, setActivePart] = useState<Part>("body");
   const [isEditing, setIsEditing] = useState(false);
   const [placedElements, setPlacedElements] = useState<PlacedElement[]>([]);
-  const [activeTab, setActiveTab] = useState<"elements" | "colors">("elements");
+  const [activeTab, setActiveTab] = useState<"elements" | "colors" | "patterns">("colors");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   if (!design) return <MainLayout><div className="p-12">Design not found</div></MainLayout>;
 
   const maskConfig = getGarmentMaskConfig(design.categoryId);
+  const suggestions = getColorSuggestions(colors.body);
 
   const handleColorChange = (color: string) => {
     setColors((prev) => ({ ...prev, [activePart]: color }));
+  };
+
+  const handlePatternSelect = (pattern: FabricPattern | null) => {
+    setPatterns((prev) => ({ ...prev, [activePart]: pattern }));
+  };
+
+  const applySuggestion = (type: "borders" | "sleeves", index: number) => {
+    const color = type === "borders" ? suggestions.borders[index] : suggestions.sleeves[index];
+    const part: Part = type === "borders" ? "border" : "sleeve";
+    setColors((prev) => ({ ...prev, [part]: color }));
+    toast({ title: "Color applied", description: `${part} color updated to ${color}` });
   };
 
   const handleSave = () => {
@@ -38,13 +60,38 @@ export default function Editor() {
       designId: design.id,
       name: design.name,
       colors: { ...colors },
-      pattern: "custom",
+      pattern: patterns.body?.name || "custom",
       measurements: null,
       fabricInfo: null,
     };
     saveDesign(saved);
+    toast({ title: "Design saved!", description: "Your customized design has been saved." });
     navigate(`/canvas/${saved.id}`);
   };
+
+  const handleDownload = async () => {
+    if (!canvasRef.current) return;
+    try {
+      const canvas = await html2canvas(canvasRef.current, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+      });
+      const link = document.createElement("a");
+      link.download = `${design.name.replace(/\s+/g, "-").toLowerCase()}-design.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      toast({ title: "Downloaded!", description: "Your design has been saved as PNG." });
+    } catch {
+      toast({ title: "Download failed", description: "Could not export the design.", variant: "destructive" });
+    }
+  };
+
+  const tabs = [
+    { id: "colors" as const, icon: Palette, label: "Colors" },
+    { id: "patterns" as const, icon: Layers, label: "Patterns" },
+    { id: "elements" as const, icon: GripVertical, label: "Elements" },
+  ];
 
   return (
     <MainLayout>
@@ -52,26 +99,32 @@ export default function Editor() {
         <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-primary mb-3 inline-block">
           ← Back
         </button>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h1 className="font-display text-2xl lg:text-3xl font-bold">{design.name}</h1>
             <p className="text-muted-foreground capitalize text-sm">{design.fabric} · {design.categoryId}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 flex-wrap">
             {!isEditing ? (
               <Button onClick={() => setIsEditing(true)} className="burgundy-gradient border-none text-primary-foreground">
                 <Palette className="mr-2" size={18} /> Edit Design
               </Button>
             ) : (
-              <Button onClick={handleSave} className="gold-gradient border-none text-secondary-foreground">
-                <Save className="mr-2" size={18} /> Save & Enter Measurements
-              </Button>
+              <>
+                <Button onClick={handleDownload} variant="outline" size="sm">
+                  <Download className="mr-1.5" size={16} /> Download PNG
+                </Button>
+                <Button onClick={handleSave} className="gold-gradient border-none text-secondary-foreground">
+                  <Save className="mr-2" size={18} /> Save Design
+                </Button>
+              </>
             )}
           </div>
         </div>
 
         <div className="grid lg:grid-cols-[1fr_340px] gap-6">
           <DraggableCanvas
+            ref={canvasRef}
             imageSrc={design.image}
             imageAlt={design.name}
             placedElements={placedElements}
@@ -79,34 +132,39 @@ export default function Editor() {
             colors={colors}
             categoryId={design.categoryId}
             activePart={isEditing ? activePart : undefined}
+            patterns={patterns}
           />
 
           {isEditing ? (
-            <div className="space-y-6 animate-fade-in overflow-y-auto max-h-[80vh]">
-              <div className="flex gap-2 bg-muted rounded-xl p-1">
-                <button
-                  onClick={() => setActiveTab("elements")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === "elements" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <GripVertical size={14} /> Elements
-                </button>
-                <button
-                  onClick={() => setActiveTab("colors")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === "colors" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
-                  }`}
-                >
-                  <Palette size={14} /> Colors
-                </button>
+            <div className="space-y-5 animate-fade-in overflow-y-auto max-h-[80vh]">
+              {/* Tab switcher */}
+              <div className="flex gap-1 bg-muted rounded-xl p-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                      activeTab === tab.id ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    <tab.icon size={14} /> {tab.label}
+                  </button>
+                ))}
               </div>
 
               {activeTab === "elements" && <ElementPanel />}
 
+              {activeTab === "patterns" && (
+                <PatternPanel
+                  activePart={maskConfig.parts.find((p) => p.id === activePart)?.label || activePart}
+                  onPatternSelect={handlePatternSelect}
+                  selectedPatternId={patterns[activePart]?.id}
+                />
+              )}
+
               {activeTab === "colors" && (
-                <div className="space-y-6">
-                  {/* Region Selector — uses category-specific part labels */}
+                <div className="space-y-5">
+                  {/* Region Selector */}
                   <div>
                     <h3 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
                       <Layers size={18} /> Select Region
@@ -141,7 +199,7 @@ export default function Editor() {
                       <Palette size={18} /> Choose Color
                     </h3>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Applying to: <span className="font-semibold text-foreground">{maskConfig.parts.find(p => p.id === activePart)?.label}</span>
+                      Applying to: <span className="font-semibold text-foreground">{maskConfig.parts.find((p) => p.id === activePart)?.label}</span>
                     </p>
                     <div className="grid grid-cols-6 gap-2">
                       {availableColors.map((color) => (
@@ -165,6 +223,71 @@ export default function Editor() {
                       />
                       <span className="text-xs text-muted-foreground font-mono">{colors[activePart]}</span>
                     </div>
+                  </div>
+
+                  {/* AI Color Suggestions */}
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <button
+                      onClick={() => setShowSuggestions(!showSuggestions)}
+                      className="flex items-center gap-2 text-sm font-semibold w-full"
+                    >
+                      <Sparkles size={16} className="text-accent" />
+                      Smart Color Suggestions
+                      <span className="ml-auto text-xs text-muted-foreground">{showSuggestions ? "▲" : "▼"}</span>
+                    </button>
+                    {showSuggestions && (
+                      <div className="mt-3 space-y-3 animate-fade-in">
+                        <p className="text-xs text-muted-foreground">Based on your body color, try these combinations:</p>
+                        <div>
+                          <p className="text-xs font-medium mb-1.5">Suggested Border Colors</p>
+                          <div className="flex gap-2">
+                            {suggestions.borders.map((c, i) => (
+                              <button
+                                key={i}
+                                onClick={() => applySuggestion("borders", i)}
+                                className="w-8 h-8 rounded-full border-2 border-border hover:scale-110 hover:border-primary transition-all"
+                                style={{ backgroundColor: c }}
+                                title={c}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium mb-1.5">Suggested Sleeve Colors</p>
+                          <div className="flex gap-2">
+                            {suggestions.sleeves.map((c, i) => (
+                              <button
+                                key={i}
+                                onClick={() => applySuggestion("sleeves", i)}
+                                className="w-8 h-8 rounded-full border-2 border-border hover:scale-110 hover:border-primary transition-all"
+                                style={{ backgroundColor: c }}
+                                title={c}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Matching outfit suggestion */}
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Shirt size={16} className="text-accent" /> Matching Outfit Tip
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {design.gender === "women"
+                        ? design.categoryId === "sarees"
+                          ? "Try a contrasting blouse color with a gold or silver border for an elegant look. A matching petticoat in the saree body color completes the outfit."
+                          : design.categoryId === "lehenga"
+                          ? "Pair with a matching choli in a lighter shade and a contrasting dupatta. Gold borders add a festive touch."
+                          : "Complement with matching bottom-wear in a neutral or analogous shade. Add a dupatta or scarf in the border color."
+                        : design.categoryId === "shirts"
+                        ? "Pair with dark trousers or chinos. Match your pocket square to the collar accent color for a polished look."
+                        : design.categoryId === "dhoti"
+                        ? "Pair with a matching kurta in a complementary shade. A silk border adds traditional elegance."
+                        : "Match with coordinating pants in a darker or neutral shade. Keep accessories minimal for a clean look."}
+                    </p>
                   </div>
 
                   {/* Live color summary */}
@@ -202,7 +325,7 @@ export default function Editor() {
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">Click "Edit Design" to customize colors for specific garment regions and add design elements.</p>
+              <p className="text-sm text-muted-foreground">Click "Edit Design" to customize colors, apply fabric patterns, and add design elements.</p>
             </div>
           )}
         </div>
