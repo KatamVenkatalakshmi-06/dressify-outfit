@@ -93,41 +93,6 @@ const DraggableCanvas = forwardRef<HTMLDivElement, Props>(
 
     const selectedElement = placedElements.find((el) => el.id === selectedId);
 
-    // Render INVISIBLE color overlays — no borders, no highlights, just fabric tinting
-    const renderColorOverlays = () => {
-      const partKeys = ["body", "sleeve", "border"] as const;
-      return partKeys.flatMap((partKey) => {
-        const regions = maskConfig.regions[partKey] || [];
-        const color = colors[partKey];
-        const pattern = patterns?.[partKey];
-        return regions.map((region) => (
-          <div key={`color-${region.name}`} className="absolute inset-0 pointer-events-none" style={{ clipPath: region.clipPath }}>
-            {/* Color tint layer */}
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundColor: color,
-                mixBlendMode: region.blendMode as React.CSSProperties["mixBlendMode"],
-                opacity: region.opacity,
-              }}
-            />
-            {/* Pattern overlay layer */}
-            {pattern && (
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: pattern.patternSvg,
-                  backgroundSize: `${pattern.defaultScale}px ${pattern.defaultScale}px`,
-                  backgroundRepeat: "repeat",
-                  mixBlendMode: "multiply",
-                  opacity: 0.6,
-                }}
-              />
-            )}
-          </div>
-        ));
-      });
-    };
 
     return (
       <div className="space-y-3">
@@ -146,9 +111,6 @@ const DraggableCanvas = forwardRef<HTMLDivElement, Props>(
         >
           {/* Base garment image */}
           <img src={imageSrc} alt={imageAlt} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
-
-          {/* Invisible color + pattern overlays */}
-          {renderColorOverlays()}
 
           {/* Subtle depth gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
