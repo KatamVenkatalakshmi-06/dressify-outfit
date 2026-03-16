@@ -1,4 +1,4 @@
-import { Search, User, MessageSquare, Save, LogOut, Home } from "lucide-react";
+import { Search, User, MessageSquare, Save, LogOut, Home, Paintbrush } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
