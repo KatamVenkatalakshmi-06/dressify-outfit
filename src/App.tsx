@@ -13,6 +13,7 @@ import Canvas from "./pages/Canvas";
 import FinalView from "./pages/FinalView";
 import SavedDesigns from "./pages/SavedDesigns";
 import Feedback from "./pages/Feedback";
+import DesignStudio from "./pages/DesignStudio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/final/:savedId" element={<FinalView />} />
             <Route path="/saved" element={<SavedDesigns />} />
             <Route path="/feedback" element={<Feedback />} />
+            <Route path="/design-studio" element={<DesignStudio />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
