@@ -62,6 +62,7 @@ export default function AppSidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-1">
         {navBtn("/home", "Home", Home)}
+        {navBtn("/design-studio", "Design Studio", Paintbrush)}
         {navBtn("/categories/women", "Women", () => <span className="text-base">👩</span>)}
         {navBtn("/categories/men", "Men", () => <span className="text-base">👨</span>)}
         {navBtn("/saved", "Saved Designs", Save)}
