@@ -112,9 +112,6 @@ const DraggableCanvas = forwardRef<HTMLDivElement, Props>(
           {/* Base garment image */}
           <img src={imageSrc} alt={imageAlt} className="absolute inset-0 w-full h-full object-cover" crossOrigin="anonymous" />
 
-          {/* Invisible color + pattern overlays */}
-          {renderColorOverlays()}
-
           {/* Subtle depth gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
 
