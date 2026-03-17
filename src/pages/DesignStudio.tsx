@@ -88,6 +88,9 @@ export default function DesignStudio() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [selectedFabric, setSelectedFabric] = useState("silk");
 
   const CANVAS_W = 600;
   const CANVAS_H = 700;
