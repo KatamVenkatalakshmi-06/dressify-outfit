@@ -470,7 +470,10 @@ export default function DesignStudio() {
                 {fabricTextures.map((f) => (
                   <button
                     key={f.id}
-                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm bg-muted/50 hover:bg-muted transition-colors flex items-center gap-2"
+                    onClick={() => setSelectedFabric(f.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                      selectedFabric === f.id ? "bg-accent text-accent-foreground ring-1 ring-accent" : "bg-muted/50 hover:bg-muted text-foreground"
+                    }`}
                   >
                     <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: f.color }} />
                     {f.label}
@@ -484,9 +487,24 @@ export default function DesignStudio() {
               <h3 className="font-display text-sm font-semibold mb-2 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-accent" /> AI Generate
               </h3>
-              <p className="text-xs text-muted-foreground mb-3">Convert your sketch into a realistic outfit design.</p>
-              <Button size="sm" className="w-full gold-gradient border-none text-secondary-foreground">
-                <Sparkles size={14} className="mr-1.5" /> Generate Outfit
+              <p className="text-xs text-muted-foreground mb-3">
+                {generatedImage
+                  ? "Your realistic outfit is ready. Select fabrics or textures to refine."
+                  : "Convert your sketch into a realistic outfit design."}
+              </p>
+              <Button
+                size="sm"
+                className="w-full gold-gradient border-none text-secondary-foreground"
+                onClick={handleGenerateOutfit}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <><Loader2 size={14} className="mr-1.5 animate-spin" /> Generating...</>
+                ) : generatedImage ? (
+                  <><Sparkles size={14} className="mr-1.5" /> Re-Generate Outfit</>
+                ) : (
+                  <><Sparkles size={14} className="mr-1.5" /> Generate Outfit</>
+                )}
               </Button>
             </div>
           </div>
