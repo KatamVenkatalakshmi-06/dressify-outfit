@@ -248,6 +248,46 @@ export default function DesignStudio() {
     toast({ title: "Downloaded!", description: "Your design has been saved as PNG." });
   };
 
+  /* ── AI Generate Outfit ── */
+  const handleGenerateOutfit = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const sketchDataUrl = canvas.toDataURL("image/png");
+    setIsGenerating(true);
+    setGeneratedImage(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-outfit", {
+        body: {
+          sketchDataUrl,
+          outfitType: selectedTemplate || "outfit",
+          gender,
+          fabric: selectedFabric,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        toast({ title: "Outfit Generated!", description: "Your AI-generated outfit is ready." });
+      } else {
+        throw new Error("No image returned");
+      }
+    } catch (err: any) {
+      console.error("Generation error:", err);
+      toast({
+        title: "Generation failed",
+        description: err.message || "Could not generate outfit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   /* ── Save design ── */
   const handleSave = () => {
     toast({ title: "Design saved!", description: "Your creation has been saved to your designs." });
