@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Paintbrush, Pen, Eraser, PaintBucket, Square, MousePointer,
   Undo2, Redo2, RotateCw, Trash2, Save, Download, Sparkles,
-  ChevronDown,
+  ChevronDown, Loader2, ArrowLeft, X,
 } from "lucide-react";
 import html2canvas from "html2canvas";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ── Types ── */
 type Tool = "brush" | "pen" | "eraser" | "fill" | "shape" | "select";
@@ -87,6 +88,9 @@ export default function DesignStudio() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [selectedFabric, setSelectedFabric] = useState("silk");
 
   const CANVAS_W = 600;
   const CANVAS_H = 700;
@@ -244,6 +248,46 @@ export default function DesignStudio() {
     toast({ title: "Downloaded!", description: "Your design has been saved as PNG." });
   };
 
+  /* ── AI Generate Outfit ── */
+  const handleGenerateOutfit = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const sketchDataUrl = canvas.toDataURL("image/png");
+    setIsGenerating(true);
+    setGeneratedImage(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-outfit", {
+        body: {
+          sketchDataUrl,
+          outfitType: selectedTemplate || "outfit",
+          gender,
+          fabric: selectedFabric,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        toast({ title: "Outfit Generated!", description: "Your AI-generated outfit is ready." });
+      } else {
+        throw new Error("No image returned");
+      }
+    } catch (err: any) {
+      console.error("Generation error:", err);
+      toast({
+        title: "Generation failed",
+        description: err.message || "Could not generate outfit. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   /* ── Save design ── */
   const handleSave = () => {
     toast({ title: "Design saved!", description: "Your creation has been saved to your designs." });
@@ -345,13 +389,17 @@ export default function DesignStudio() {
             </div>
           </div>
 
-          {/* Center — Drawing Canvas */}
-          <div className="flex-1 flex items-center justify-center bg-muted/30 overflow-auto p-4" ref={containerRef}>
-            <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white">
+          {/* Center — Drawing Canvas & AI Result */}
+          <div className="flex-1 flex items-center justify-center bg-muted/30 overflow-auto p-4 gap-4" ref={containerRef}>
+            {/* Sketch canvas */}
+            <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
+              {generatedImage && (
+                <div className="absolute -top-6 left-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Sketch</div>
+              )}
               <canvas
                 ref={canvasRef}
                 className="cursor-crosshair block"
-                style={{ width: "100%", maxWidth: 600, maxHeight: 700 }}
+                style={{ width: generatedImage ? 280 : "100%", maxWidth: generatedImage ? 280 : 600, maxHeight: 700 }}
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={endDraw}
@@ -361,6 +409,35 @@ export default function DesignStudio() {
                 onTouchEnd={endDraw}
               />
             </div>
+
+            {/* Loading state */}
+            {isGenerating && (
+              <div className="flex flex-col items-center gap-3 p-8">
+                <Loader2 size={40} className="animate-spin text-accent" />
+                <p className="text-sm text-muted-foreground font-medium">Generating realistic outfit...</p>
+                <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
+              </div>
+            )}
+
+            {/* Generated result */}
+            {generatedImage && !isGenerating && (
+              <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
+                <div className="absolute -top-6 left-0 text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles size={12} /> AI Generated
+                </div>
+                <button
+                  onClick={() => setGeneratedImage(null)}
+                  className="absolute top-2 right-2 z-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-background text-muted-foreground hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+                <img
+                  src={generatedImage}
+                  alt="AI Generated Outfit"
+                  className="block max-h-[700px] w-auto max-w-[400px] object-contain"
+                />
+              </div>
+            )}
           </div>
 
           {/* Right sidebar — Colors & Fabrics */}
@@ -393,7 +470,10 @@ export default function DesignStudio() {
                 {fabricTextures.map((f) => (
                   <button
                     key={f.id}
-                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm bg-muted/50 hover:bg-muted transition-colors flex items-center gap-2"
+                    onClick={() => setSelectedFabric(f.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
+                      selectedFabric === f.id ? "bg-accent text-accent-foreground ring-1 ring-accent" : "bg-muted/50 hover:bg-muted text-foreground"
+                    }`}
                   >
                     <div className="w-6 h-6 rounded border border-border" style={{ backgroundColor: f.color }} />
                     {f.label}
@@ -407,9 +487,24 @@ export default function DesignStudio() {
               <h3 className="font-display text-sm font-semibold mb-2 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-accent" /> AI Generate
               </h3>
-              <p className="text-xs text-muted-foreground mb-3">Convert your sketch into a realistic outfit design.</p>
-              <Button size="sm" className="w-full gold-gradient border-none text-secondary-foreground">
-                <Sparkles size={14} className="mr-1.5" /> Generate Outfit
+              <p className="text-xs text-muted-foreground mb-3">
+                {generatedImage
+                  ? "Your realistic outfit is ready. Select fabrics or textures to refine."
+                  : "Convert your sketch into a realistic outfit design."}
+              </p>
+              <Button
+                size="sm"
+                className="w-full gold-gradient border-none text-secondary-foreground"
+                onClick={handleGenerateOutfit}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <><Loader2 size={14} className="mr-1.5 animate-spin" /> Generating...</>
+                ) : generatedImage ? (
+                  <><Sparkles size={14} className="mr-1.5" /> Re-Generate Outfit</>
+                ) : (
+                  <><Sparkles size={14} className="mr-1.5" /> Generate Outfit</>
+                )}
               </Button>
             </div>
           </div>
