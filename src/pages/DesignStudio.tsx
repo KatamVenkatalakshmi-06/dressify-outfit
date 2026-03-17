@@ -389,13 +389,17 @@ export default function DesignStudio() {
             </div>
           </div>
 
-          {/* Center — Drawing Canvas */}
-          <div className="flex-1 flex items-center justify-center bg-muted/30 overflow-auto p-4" ref={containerRef}>
-            <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white">
+          {/* Center — Drawing Canvas & AI Result */}
+          <div className="flex-1 flex items-center justify-center bg-muted/30 overflow-auto p-4 gap-4" ref={containerRef}>
+            {/* Sketch canvas */}
+            <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
+              {generatedImage && (
+                <div className="absolute -top-6 left-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Sketch</div>
+              )}
               <canvas
                 ref={canvasRef}
                 className="cursor-crosshair block"
-                style={{ width: "100%", maxWidth: 600, maxHeight: 700 }}
+                style={{ width: generatedImage ? 280 : "100%", maxWidth: generatedImage ? 280 : 600, maxHeight: 700 }}
                 onMouseDown={startDraw}
                 onMouseMove={draw}
                 onMouseUp={endDraw}
@@ -405,6 +409,35 @@ export default function DesignStudio() {
                 onTouchEnd={endDraw}
               />
             </div>
+
+            {/* Loading state */}
+            {isGenerating && (
+              <div className="flex flex-col items-center gap-3 p-8">
+                <Loader2 size={40} className="animate-spin text-accent" />
+                <p className="text-sm text-muted-foreground font-medium">Generating realistic outfit...</p>
+                <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
+              </div>
+            )}
+
+            {/* Generated result */}
+            {generatedImage && !isGenerating && (
+              <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
+                <div className="absolute -top-6 left-0 text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles size={12} /> AI Generated
+                </div>
+                <button
+                  onClick={() => setGeneratedImage(null)}
+                  className="absolute top-2 right-2 z-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-background text-muted-foreground hover:text-foreground"
+                >
+                  <X size={14} />
+                </button>
+                <img
+                  src={generatedImage}
+                  alt="AI Generated Outfit"
+                  className="block max-h-[700px] w-auto max-w-[400px] object-contain"
+                />
+              </div>
+            )}
           </div>
 
           {/* Right sidebar — Colors & Fabrics */}
