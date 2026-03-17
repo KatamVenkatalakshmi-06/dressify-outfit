@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Paintbrush, Pen, Eraser, PaintBucket, Square, MousePointer,
   Undo2, Redo2, RotateCw, Trash2, Save, Download, Sparkles,
-  ChevronDown,
+  ChevronDown, Loader2, ArrowLeft, X,
 } from "lucide-react";
 import html2canvas from "html2canvas";
+import { supabase } from "@/integrations/supabase/client";
 
 /* ── Types ── */
 type Tool = "brush" | "pen" | "eraser" | "fill" | "shape" | "select";
