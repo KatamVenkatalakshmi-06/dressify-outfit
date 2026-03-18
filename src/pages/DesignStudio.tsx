@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useApp } from "@/contexts/AppContext";
 import {
   Paintbrush, Pen, Eraser, PaintBucket, Square, MousePointer,
-  Undo2, Redo2, RotateCw, Trash2, Save, Download, Sparkles,
-  ChevronDown, Loader2, ArrowLeft, X,
+  Undo2, Redo2, Trash2, Save, Download, Sparkles,
+  Loader2, X, Upload, User, Camera,
 } from "lucide-react";
-import html2canvas from "html2canvas";
 import { supabase } from "@/integrations/supabase/client";
 
 /* ── Types ── */
@@ -35,24 +35,24 @@ const outfitTemplates: Record<Gender, { id: string; label: string; svg: string }
   ],
 };
 
-/* ── Pattern library (drag onto canvas) ── */
+/* ── Pattern library ── */
 const patternSwatches = [
-  { id: "paisley", label: "Paisley", css: "radial-gradient(ellipse at 50% 0%, hsl(var(--accent)/0.3) 0%, transparent 60%), radial-gradient(ellipse at 0% 50%, hsl(var(--accent)/0.2) 0%, transparent 60%)" },
-  { id: "brocade", label: "Brocade", css: "repeating-linear-gradient(45deg, hsl(var(--gold)/0.15) 0px, hsl(var(--gold)/0.15) 2px, transparent 2px, transparent 8px)" },
-  { id: "floral", label: "Floral", css: "radial-gradient(circle at 25% 25%, hsl(var(--primary)/0.15) 2px, transparent 6px), radial-gradient(circle at 75% 75%, hsl(var(--primary)/0.15) 2px, transparent 6px)" },
-  { id: "geometric", label: "Geometric", css: "linear-gradient(45deg, hsl(var(--accent)/0.1) 25%, transparent 25%), linear-gradient(-45deg, hsl(var(--accent)/0.1) 25%, transparent 25%)" },
-  { id: "stripes", label: "Stripes", css: "repeating-linear-gradient(90deg, hsl(var(--primary)/0.1) 0px, hsl(var(--primary)/0.1) 3px, transparent 3px, transparent 10px)" },
-  { id: "checks", label: "Checks", css: "repeating-conic-gradient(hsl(var(--accent)/0.1) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" },
+  { id: "paisley", label: "Paisley", css: "radial-gradient(ellipse at 50% 0%, rgba(139,26,74,0.3) 0%, transparent 60%), radial-gradient(ellipse at 0% 50%, rgba(139,26,74,0.2) 0%, transparent 60%)" },
+  { id: "brocade", label: "Brocade", css: "repeating-linear-gradient(45deg, rgba(212,168,83,0.25) 0px, rgba(212,168,83,0.25) 2px, transparent 2px, transparent 8px)" },
+  { id: "floral", label: "Floral", css: "radial-gradient(circle at 25% 25%, rgba(139,26,74,0.2) 2px, transparent 6px), radial-gradient(circle at 75% 75%, rgba(139,26,74,0.2) 2px, transparent 6px), radial-gradient(circle at 50% 50%, rgba(212,168,83,0.15) 3px, transparent 8px)" },
+  { id: "geometric", label: "Geometric", css: "linear-gradient(45deg, rgba(139,26,74,0.15) 25%, transparent 25%), linear-gradient(-45deg, rgba(139,26,74,0.15) 25%, transparent 25%)" },
+  { id: "stripes", label: "Stripes", css: "repeating-linear-gradient(90deg, rgba(139,26,74,0.15) 0px, rgba(139,26,74,0.15) 3px, transparent 3px, transparent 10px)" },
+  { id: "checks", label: "Checks", css: "repeating-conic-gradient(rgba(139,26,74,0.12) 0% 25%, transparent 0% 50%) 0 0 / 16px 16px" },
 ];
 
 /* ── Fabric textures ── */
 const fabricTextures = [
-  { id: "silk", label: "Silk", color: "hsl(35 65% 55% / 0.15)" },
-  { id: "cotton", label: "Cotton", color: "hsl(35 20% 88% / 0.3)" },
-  { id: "velvet", label: "Velvet", color: "hsl(345 60% 40% / 0.12)" },
-  { id: "chiffon", label: "Chiffon", color: "hsl(35 30% 97% / 0.2)" },
-  { id: "denim", label: "Denim", color: "hsl(220 40% 50% / 0.15)" },
-  { id: "linen", label: "Linen", color: "hsl(40 25% 80% / 0.25)" },
+  { id: "silk", label: "Silk", color: "rgba(212,168,83,0.15)" },
+  { id: "cotton", label: "Cotton", color: "rgba(200,190,170,0.3)" },
+  { id: "velvet", label: "Velvet", color: "rgba(139,26,74,0.12)" },
+  { id: "chiffon", label: "Chiffon", color: "rgba(240,230,220,0.2)" },
+  { id: "denim", label: "Denim", color: "rgba(70,100,140,0.15)" },
+  { id: "linen", label: "Linen", color: "rgba(190,180,160,0.25)" },
 ];
 
 /* ── Color palette ── */
@@ -77,8 +77,11 @@ const tools: { id: Tool; icon: typeof Paintbrush; label: string }[] = [
 export default function DesignStudio() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isLoggedIn } = useApp();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const patternCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTool, setActiveTool] = useState<Tool>("brush");
   const [activeColor, setActiveColor] = useState("#8B1A4A");
@@ -91,6 +94,11 @@ export default function DesignStudio() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState("silk");
+  const [selectedPattern, setSelectedPattern] = useState<string | null>(null);
+  const [isTryingOn, setIsTryingOn] = useState(false);
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
+  const [showTryOnUpload, setShowTryOnUpload] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const CANVAS_W = 600;
   const CANVAS_H = 700;
@@ -105,6 +113,14 @@ export default function DesignStudio() {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     saveToHistory();
+  }, []);
+
+  /* ── Pattern overlay canvas ── */
+  useEffect(() => {
+    const pCanvas = patternCanvasRef.current;
+    if (!pCanvas) return;
+    pCanvas.width = CANVAS_W;
+    pCanvas.height = CANVAS_H;
   }, []);
 
   const saveToHistory = useCallback(() => {
@@ -167,7 +183,6 @@ export default function DesignStudio() {
     const pos = getPos(e);
 
     if (activeTool === "fill") {
-      // Simple fill at point
       ctx.fillStyle = activeColor;
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
       saveToHistory();
@@ -227,6 +242,20 @@ export default function DesignStudio() {
     setSelectedTemplate(templateId);
   };
 
+  /* ── Apply pattern to canvas ── */
+  const applyPattern = (patternId: string) => {
+    setSelectedPattern(patternId);
+    toast({ title: `${patternId.charAt(0).toUpperCase() + patternId.slice(1)} pattern applied`, description: "Pattern will be included in AI generation." });
+  };
+
+  /* ── Apply fabric overlay to canvas ── */
+  const applyFabric = (fabricId: string) => {
+    setSelectedFabric(fabricId);
+    const fabric = fabricTextures.find(f => f.id === fabricId);
+    if (!fabric) return;
+    toast({ title: `${fabric.label} fabric selected`, description: "Fabric texture will be applied in AI generation." });
+  };
+
   /* ── Clear canvas ── */
   const clearCanvas = () => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -235,10 +264,21 @@ export default function DesignStudio() {
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     saveToHistory();
     setSelectedTemplate(null);
+    setSelectedPattern(null);
+    setGeneratedImage(null);
+    setTryOnImage(null);
   };
 
   /* ── Download ── */
   const handleDownload = () => {
+    if (generatedImage) {
+      const link = document.createElement("a");
+      link.download = "dressify-ai-outfit.png";
+      link.href = generatedImage;
+      link.click();
+      toast({ title: "Downloaded!", description: "Your AI outfit has been saved as PNG." });
+      return;
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
@@ -248,20 +288,28 @@ export default function DesignStudio() {
     toast({ title: "Downloaded!", description: "Your design has been saved as PNG." });
   };
 
+  /* ── Get combined canvas data (sketch + pattern overlay) ── */
+  const getCombinedCanvasData = (): string => {
+    const canvas = canvasRef.current;
+    if (!canvas) return "";
+    return canvas.toDataURL("image/png");
+  };
+
   /* ── AI Generate Outfit ── */
   const handleGenerateOutfit = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const sketchDataUrl = getCombinedCanvasData();
+    if (!sketchDataUrl) return;
 
-    const sketchDataUrl = canvas.toDataURL("image/png");
     setIsGenerating(true);
     setGeneratedImage(null);
+    setTryOnImage(null);
 
     try {
+      const patternLabel = selectedPattern ? ` with ${selectedPattern} pattern` : "";
       const { data, error } = await supabase.functions.invoke("generate-outfit", {
         body: {
           sketchDataUrl,
-          outfitType: selectedTemplate || "outfit",
+          outfitType: (selectedTemplate || "outfit") + patternLabel,
           gender,
           fabric: selectedFabric,
         },
@@ -288,9 +336,92 @@ export default function DesignStudio() {
     }
   };
 
-  /* ── Save design ── */
-  const handleSave = () => {
-    toast({ title: "Design saved!", description: "Your creation has been saved to your designs." });
+  /* ── Save design to database ── */
+  const handleSave = async () => {
+    if (!isLoggedIn || !user) {
+      toast({ title: "Please log in", description: "You need to be logged in to save designs.", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const sketchDataUrl = getCombinedCanvasData();
+      const designData = {
+        sketchDataUrl,
+        generatedImageUrl: generatedImage,
+        outfitType: selectedTemplate || "custom",
+        gender,
+        fabric: selectedFabric,
+        pattern: selectedPattern,
+        colors: [activeColor],
+      };
+
+      const { error } = await supabase.from("saved_designs").insert({
+        user_id: user.id,
+        title: `${gender === "women" ? "Women's" : "Men's"} ${selectedTemplate || "Custom"} Design`,
+        design_data: designData as any,
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Design Saved! ✨", description: "Your creation has been saved." });
+      navigate("/saved-designs");
+    } catch (err: any) {
+      console.error("Save error:", err);
+      toast({ title: "Save failed", description: err.message || "Could not save design.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  /* ── Virtual Try-On ── */
+  const handleTryOnUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !generatedImage) return;
+
+    setIsTryingOn(true);
+    setShowTryOnUpload(false);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const personImageUrl = reader.result as string;
+
+        try {
+          const { data, error } = await supabase.functions.invoke("virtual-tryon", {
+            body: {
+              personImageUrl,
+              outfitImageUrl: generatedImage,
+              outfitType: selectedTemplate || "outfit",
+              gender,
+            },
+          });
+
+          if (error) throw error;
+          if (data?.error) throw new Error(data.error);
+
+          if (data?.imageUrl) {
+            setTryOnImage(data.imageUrl);
+            toast({ title: "Try-On Ready! 👗", description: "See how the outfit looks on you." });
+          } else {
+            throw new Error("No try-on image returned");
+          }
+        } catch (err: any) {
+          console.error("Try-on error:", err);
+          toast({
+            title: "Try-On failed",
+            description: err.message || "Could not generate try-on. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsTryingOn(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setIsTryingOn(false);
+    }
   };
 
   return (
@@ -309,7 +440,9 @@ export default function DesignStudio() {
             <Button variant="ghost" size="sm" onClick={clearCanvas}><Trash2 size={16} /></Button>
             <div className="w-px h-6 bg-border mx-1" />
             <Button variant="outline" size="sm" onClick={handleDownload}><Download size={14} className="mr-1" /> PNG</Button>
-            <Button size="sm" className="burgundy-gradient border-none text-primary-foreground" onClick={handleSave}><Save size={14} className="mr-1" /> Save</Button>
+            <Button size="sm" className="burgundy-gradient border-none text-primary-foreground" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <><Loader2 size={14} className="mr-1 animate-spin" /> Saving...</> : <><Save size={14} className="mr-1" /> Save</>}
+            </Button>
           </div>
         </div>
 
@@ -374,12 +507,23 @@ export default function DesignStudio() {
             {/* Patterns */}
             <div>
               <h3 className="font-display text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Patterns</h3>
+              <button
+                onClick={() => { setSelectedPattern(null); toast({ title: "Pattern removed" }); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs mb-1.5 transition-all ${
+                  !selectedPattern ? "bg-accent text-accent-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                None (Plain)
+              </button>
               <div className="grid grid-cols-2 gap-1.5">
                 {patternSwatches.map((p) => (
                   <button
                     key={p.id}
-                    className="h-14 rounded-lg border border-border hover:border-primary transition-colors relative overflow-hidden"
-                    style={{ background: p.css, backgroundColor: "hsl(var(--card))" }}
+                    onClick={() => applyPattern(p.id)}
+                    className={`h-14 rounded-lg border transition-colors relative overflow-hidden ${
+                      selectedPattern === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary"
+                    }`}
+                    style={{ background: p.css, backgroundColor: "#fff" }}
                     title={p.label}
                   >
                     <span className="absolute bottom-0.5 left-1 text-[9px] text-muted-foreground font-medium">{p.label}</span>
@@ -390,52 +534,156 @@ export default function DesignStudio() {
           </div>
 
           {/* Center — Drawing Canvas & AI Result */}
-          <div className="flex-1 flex items-center justify-center bg-muted/30 overflow-auto p-4 gap-4" ref={containerRef}>
-            {/* Sketch canvas */}
-            <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
-              {generatedImage && (
-                <div className="absolute -top-6 left-0 text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Sketch</div>
+          <div className="flex-1 flex flex-col items-center justify-center bg-muted/30 overflow-auto p-4 gap-4" ref={containerRef}>
+            <div className="flex items-start justify-center gap-4 flex-wrap">
+              {/* Sketch canvas */}
+              <div className="relative flex-shrink-0">
+                {generatedImage && (
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Your Sketch</div>
+                )}
+                <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white">
+                  <canvas
+                    ref={canvasRef}
+                    className="cursor-crosshair block"
+                    style={{ width: generatedImage ? 280 : "100%", maxWidth: generatedImage ? 280 : 500, maxHeight: 600 }}
+                    onMouseDown={startDraw}
+                    onMouseMove={draw}
+                    onMouseUp={endDraw}
+                    onMouseLeave={endDraw}
+                    onTouchStart={startDraw}
+                    onTouchMove={draw}
+                    onTouchEnd={endDraw}
+                  />
+                  {/* Pattern overlay preview */}
+                  {selectedPattern && !generatedImage && (
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-xl"
+                      style={{
+                        background: patternSwatches.find(p => p.id === selectedPattern)?.css || "",
+                        opacity: 0.5,
+                      }}
+                    />
+                  )}
+                  {/* Fabric overlay preview */}
+                  {selectedFabric && !generatedImage && (
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-xl"
+                      style={{
+                        backgroundColor: fabricTextures.find(f => f.id === selectedFabric)?.color || "transparent",
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Loading state */}
+              {isGenerating && (
+                <div className="flex flex-col items-center gap-3 p-8">
+                  <Loader2 size={40} className="animate-spin text-accent" />
+                  <p className="text-sm text-muted-foreground font-medium">Generating realistic outfit...</p>
+                  <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
+                </div>
               )}
-              <canvas
-                ref={canvasRef}
-                className="cursor-crosshair block"
-                style={{ width: generatedImage ? 280 : "100%", maxWidth: generatedImage ? 280 : 600, maxHeight: 700 }}
-                onMouseDown={startDraw}
-                onMouseMove={draw}
-                onMouseUp={endDraw}
-                onMouseLeave={endDraw}
-                onTouchStart={startDraw}
-                onTouchMove={draw}
-                onTouchEnd={endDraw}
-              />
+
+              {/* Generated result */}
+              {generatedImage && !isGenerating && (
+                <div className="relative flex-shrink-0">
+                  <div className="text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-1 mb-1">
+                    <Sparkles size={12} /> AI Generated
+                  </div>
+                  <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white">
+                    <button
+                      onClick={() => { setGeneratedImage(null); setTryOnImage(null); }}
+                      className="absolute top-2 right-2 z-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-background text-muted-foreground hover:text-foreground"
+                    >
+                      <X size={14} />
+                    </button>
+                    <img
+                      src={generatedImage}
+                      alt="AI Generated Outfit"
+                      className="block max-h-[500px] w-auto max-w-[350px] object-contain"
+                    />
+                  </div>
+                  {/* Action buttons below generated image */}
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      className="flex-1 burgundy-gradient border-none text-primary-foreground"
+                      onClick={handleSave}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Save size={14} className="mr-1" />}
+                      Save Design
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowTryOnUpload(true)}
+                    >
+                      <Camera size={14} className="mr-1" /> Virtual Try-On
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Try-on loading */}
+              {isTryingOn && (
+                <div className="flex flex-col items-center gap-3 p-8">
+                  <Loader2 size={40} className="animate-spin text-accent" />
+                  <p className="text-sm text-muted-foreground font-medium">Creating virtual try-on...</p>
+                  <p className="text-xs text-muted-foreground">This may take 20-40 seconds</p>
+                </div>
+              )}
+
+              {/* Try-on result */}
+              {tryOnImage && !isTryingOn && (
+                <div className="relative flex-shrink-0">
+                  <div className="text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-1 mb-1">
+                    <User size={12} /> Virtual Try-On
+                  </div>
+                  <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white">
+                    <button
+                      onClick={() => setTryOnImage(null)}
+                      className="absolute top-2 right-2 z-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-background text-muted-foreground hover:text-foreground"
+                    >
+                      <X size={14} />
+                    </button>
+                    <img
+                      src={tryOnImage}
+                      alt="Virtual Try-On"
+                      className="block max-h-[500px] w-auto max-w-[350px] object-contain"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Loading state */}
-            {isGenerating && (
-              <div className="flex flex-col items-center gap-3 p-8">
-                <Loader2 size={40} className="animate-spin text-accent" />
-                <p className="text-sm text-muted-foreground font-medium">Generating realistic outfit...</p>
-                <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
-              </div>
-            )}
-
-            {/* Generated result */}
-            {generatedImage && !isGenerating && (
-              <div className="relative shadow-2xl rounded-xl overflow-hidden bg-white flex-shrink-0">
-                <div className="absolute -top-6 left-0 text-xs font-medium text-accent uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles size={12} /> AI Generated
+            {/* Virtual Try-On Upload Modal */}
+            {showTryOnUpload && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setShowTryOnUpload(false)}>
+                <div className="bg-card rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display text-lg font-bold">Virtual Try-On</h3>
+                    <button onClick={() => setShowTryOnUpload(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">Upload a full-body photo to see how this outfit looks on you.</p>
+                  <div
+                    className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload size={32} className="mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm font-medium">Click to upload your photo</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG • Full-body photo recommended</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleTryOnUpload}
+                  />
                 </div>
-                <button
-                  onClick={() => setGeneratedImage(null)}
-                  className="absolute top-2 right-2 z-10 p-1 rounded-full bg-background/80 backdrop-blur hover:bg-background text-muted-foreground hover:text-foreground"
-                >
-                  <X size={14} />
-                </button>
-                <img
-                  src={generatedImage}
-                  alt="AI Generated Outfit"
-                  className="block max-h-[700px] w-auto max-w-[400px] object-contain"
-                />
               </div>
             )}
           </div>
@@ -470,7 +718,7 @@ export default function DesignStudio() {
                 {fabricTextures.map((f) => (
                   <button
                     key={f.id}
-                    onClick={() => setSelectedFabric(f.id)}
+                    onClick={() => applyFabric(f.id)}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
                       selectedFabric === f.id ? "bg-accent text-accent-foreground ring-1 ring-accent" : "bg-muted/50 hover:bg-muted text-foreground"
                     }`}
@@ -489,9 +737,13 @@ export default function DesignStudio() {
               </h3>
               <p className="text-xs text-muted-foreground mb-3">
                 {generatedImage
-                  ? "Your realistic outfit is ready. Select fabrics or textures to refine."
+                  ? "Your realistic outfit is ready!"
                   : "Convert your sketch into a realistic outfit design."}
               </p>
+              {selectedPattern && (
+                <p className="text-xs text-accent mb-2">✦ Pattern: {selectedPattern}</p>
+              )}
+              <p className="text-xs text-muted-foreground mb-3">✦ Fabric: {selectedFabric}</p>
               <Button
                 size="sm"
                 className="w-full gold-gradient border-none text-secondary-foreground"
@@ -501,7 +753,7 @@ export default function DesignStudio() {
                 {isGenerating ? (
                   <><Loader2 size={14} className="mr-1.5 animate-spin" /> Generating...</>
                 ) : generatedImage ? (
-                  <><Sparkles size={14} className="mr-1.5" /> Re-Generate Outfit</>
+                  <><Sparkles size={14} className="mr-1.5" /> Re-Generate</>
                 ) : (
                   <><Sparkles size={14} className="mr-1.5" /> Generate Outfit</>
                 )}
