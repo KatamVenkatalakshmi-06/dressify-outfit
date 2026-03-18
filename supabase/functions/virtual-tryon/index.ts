@@ -12,31 +12,24 @@ serve(async (req) => {
   }
 
   try {
-    const { sketchDataUrl, outfitType, gender, fabric } = await req.json();
+    const { personImageUrl, outfitImageUrl, outfitType, gender } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!personImageUrl) throw new Error("No person photo provided");
+    if (!outfitImageUrl) throw new Error("No outfit image provided");
 
-    if (!sketchDataUrl) {
-      throw new Error("No sketch provided");
-    }
-
+    const genderLabel = gender === "men" ? "male" : "female";
     const outfitLabel = outfitType || "outfit";
-    const genderLabel = gender === "men" ? "men's" : "women's";
-    const fabricLabel = fabric || "silk";
 
-    const prompt = `Convert this exact fashion sketch into a photorealistic ${genderLabel} ${outfitLabel} made of ${fabricLabel} fabric.
+    const prompt = `You are given two images. The first image is a photo of a ${genderLabel} person. The second image is a ${outfitLabel} garment.
 
-CRITICAL RULES:
-- Reproduce the EXACT same silhouette, shape, and design from the sketch. Do NOT add any extra design elements, patterns, or embellishments that are not in the sketch.
-- If the sketch shows a plain garment, keep it plain. Only add details that are clearly drawn in the sketch.
-- Apply realistic ${fabricLabel} fabric texture with natural folds, shadows, and lighting.
-- Display the garment on a clean white/neutral background, flat-lay or mannequin style.
-- Make it look like a professional fashion catalog photograph.
-- Match the exact proportions and outline of the sketched garment.
-- Do NOT add embroidery, borders, or decorations unless they are explicitly drawn in the sketch.`;
+Your task: Create a photorealistic image of the person wearing this exact outfit. 
+- Preserve the person's face, body shape, skin tone, and pose exactly.
+- Fit the outfit naturally on their body with proper proportions.
+- Add realistic fabric draping, shadows, and lighting that match the person's environment.
+- The result should look like a real photograph, not a collage or overlay.
+- Keep the background from the person's original photo.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -53,10 +46,8 @@ CRITICAL RULES:
               role: "user",
               content: [
                 { type: "text", text: prompt },
-                {
-                  type: "image_url",
-                  image_url: { url: sketchDataUrl },
-                },
+                { type: "image_url", image_url: { url: personImageUrl } },
+                { type: "image_url", image_url: { url: outfitImageUrl } },
               ],
             },
           ],
@@ -84,28 +75,21 @@ CRITICAL RULES:
     }
 
     const data = await response.json();
-    const generatedImage =
-      data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    const textResponse = data.choices?.[0]?.message?.content || "";
+    const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!generatedImage) {
-      throw new Error("No image was generated. Please try again.");
+      throw new Error("No try-on image was generated. Please try again.");
     }
 
     return new Response(
-      JSON.stringify({ imageUrl: generatedImage, description: textResponse }),
+      JSON.stringify({ imageUrl: generatedImage }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    console.error("generate-outfit error:", e);
+    console.error("virtual-tryon error:", e);
     return new Response(
-      JSON.stringify({
-        error: e instanceof Error ? e.message : "Failed to generate outfit",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: e instanceof Error ? e.message : "Failed to generate try-on" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
