@@ -1,0 +1,14 @@
+{
+  "name": "dressify-workspace-launcher",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node scripts/run-app.js dev",
+    "start": "node scripts/run-app.js dev",
+    "build": "node scripts/run-app.js build",
+    "preview": "node scripts/run-app.js preview",
+    "test": "node scripts/run-app.js test",
+    "lint": "node scripts/run-app.js lint",
+    "install:app": "node scripts/run-app.js install"
+  }
+}
